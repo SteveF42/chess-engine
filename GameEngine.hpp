@@ -1,16 +1,14 @@
 #ifndef GameEngine_H
 #define GameEngine_H
 #include <SFML/Graphics.hpp>
-#include "Board.hpp"
-#include "Piece.hpp"
+#include"Board.hpp"
 #include <map>
 #include <stack>
-#include<iostream>
+#include <iostream>
 
 class GameEngine
 {
 private:
-    std::map<std::string, sf::Texture *> textures;
     const int BOARDSIZE = 8;
     const float SQUARESIZE = 25.f;
     const sf::Color LIGHTSQUARE = sf::Color(210, 140, 69);
@@ -18,19 +16,19 @@ private:
     const float screenOffsetMultiplyer = 1.5;
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;
-    std::map<int, sf::Sprite> sprites;
 
+    static void loadTextures();
     void drawBoard();
     void drawPieces();
-    void loadTextures();
     void updatePosition();
 
 public:
+    static std::map<std::string, sf::Texture*> textures;
+
     GameEngine()
     {
-        gameBoard = new Board();
         loadTextures();
-        updatePosition();
+        gameBoard = new Board();
     }
 
     bool isActive() { return window->isOpen(); }

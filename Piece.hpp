@@ -1,12 +1,12 @@
 #ifndef Piece_H
 #define Piece_H
+#include <SFML/Graphics.hpp>
+
 
 class Piece
 {
 
 private:
-    int pieceType;
-
     static const int typeMask = 0b00111;
     static const int blackMask = 0b10000;
     static const int whiteMask = 0b01000;
@@ -22,11 +22,6 @@ public:
 
     static const int BLACK = 8;
     static const int WHITE = 16;
-
-    Piece(int piece)
-    {
-        pieceType = piece;
-    }
     static int getPieceColor(int piece) { return piece & colourMask; }
     static int getPieceType(int piece) { return piece & typeMask; }
     static int isColor(int piece, int color) { return (piece & colourMask) == color; }

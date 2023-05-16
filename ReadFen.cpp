@@ -32,7 +32,7 @@ Position ReadFen::readFenString(std::string fen)
 {
     std::map<char, int> lookUpTable = {{'k', Piece::KING}, {'q', Piece::QUEEN}, {'b', Piece::BISHOP}, {'r', Piece::ROOK}, {'n', Piece::KNIGHT}, {'p', Piece::PAWN}};
     Position currentPosition;
-    int* board = currentPosition.board;
+    Square** board = currentPosition.board;
     std::vector<std::string> sections = splitString(fen);
 
     int rank = 0;
@@ -58,7 +58,7 @@ Position ReadFen::readFenString(std::string fen)
             char c = tolower(i);
             int pieceType = lookUpTable[c];
             int pieceColor = isWhite ? Piece::WHITE : Piece::BLACK;
-            board[position] = pieceColor | pieceType;
+            board[position]->setPieceType(pieceType | pieceColor);
 
             file += 1;
         }

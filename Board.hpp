@@ -11,10 +11,10 @@ struct Position
     {
         for (int i = 0; i < 64; i++)
         {
-            board[i] = 0;
+            board[i] = new Square(0,i);
         }
     }
-    int board[64];
+    Square* board[64];
     bool whiteToMove = true;
     bool blackCastleKingSide = false;
     bool whiteCastleKingSide = false;
@@ -33,8 +33,11 @@ public:
     {
         currentPosition = ReadFen::readFenString(ReadFen::startingString);
     }
+    Board(std::string fenString){
+        currentPosition = ReadFen::readFenString(fenString);
+    }
 
-    int *getBoard() { return currentPosition.board; }
+    Square **getBoard() { return currentPosition.board; }
     void loadBoard();
 
     void makeMove();

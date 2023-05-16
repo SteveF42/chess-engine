@@ -1,22 +1,37 @@
 #ifndef Square_H
 #define Square_H
-
 #include "Piece.hpp"
+
+
 class Square
 {
 private:
-    int piece;
+    int pieceType;
+    sf::Sprite *sprite;
     int squarePosition;
 
+    sf::Sprite* getSprite(int currentSprite);
+
 public:
-    Square(int position)
+    Square(int piece, int position)
     {
         squarePosition = position;
+        piece = piece;
     }
     int getSquarePosition() { return squarePosition; }
-    int getPiece() { return piece; }
+    int getPieceType() { return pieceType; }
+    sf::Sprite* getSprite(){return sprite;}
     void setSquarePosition(int pos) { squarePosition = pos; }
-    void setPieceType(Piece* piece) { piece = piece; }
+    void setPieceType(int piece)
+    {
+        pieceType = piece;
+        sprite = getSprite(pieceType);   
+    }
+    void swapPiece(Square& other);
+
+    bool operator==(int& otherPiece){
+        return pieceType == otherPiece;
+    }
 };
 
 #endif

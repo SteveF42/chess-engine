@@ -1,5 +1,8 @@
 #include "GameEngine.hpp"
 
+std::map<std::string, sf::Texture *> GameEngine::textures={};
+
+
 void GameEngine::drawBoard()
 {
     for (int rank = 0; rank < BOARDSIZE; rank++)
@@ -21,7 +24,7 @@ void GameEngine::drawBoard()
 
 void GameEngine::drawPieces()
 {
-    int *arr = gameBoard->getBoard();
+    Square **arr = gameBoard->getBoard();
     for (int rank = 0; rank < BOARDSIZE; rank++)
     {
         for (int file = 0; file < BOARDSIZE; file++)
@@ -30,79 +33,18 @@ void GameEngine::drawPieces()
             if (arr[position] == 0)
                 continue;
 
-            sf::Sprite sprite = sprites[position];
-            sprite.setScale(sf::Vector2f(0.19, 0.19));
+            sf::Sprite* sprite = arr[position]->getSprite();
+            if(sprite == nullptr) continue;
+
+            sprite->setScale(sf::Vector2f(0.19, 0.19));
             sf::Vector2f pos(file * SQUARESIZE, rank * SQUARESIZE);
-            sprite.setPosition(pos);
-            window->draw(sprite);
+            sprite->setPosition(pos);
+            window->draw(*sprite);
         }
     }
 }
 
-void GameEngine::updatePosition()
-{
-    int *arr = gameBoard->getBoard();
-    for (int i = 0; i < 64; i++)
-    {
-        int currentPiece = arr[i];
-        if (currentPiece == 0)
-            continue;
 
-        int pieceType = Piece::getPieceType(currentPiece);
-        if (Piece::getPieceColor(currentPiece) == Piece::BLACK)
-        {
-            switch (pieceType)
-            {
-            case Piece::PAWN:
-                sprites[i] = sf::Sprite(*textures["bp"]);
-                break;
-            case Piece::BISHOP:
-                sprites[i] = sf::Sprite(*textures["bb"]);
-                break;
-            case Piece::KNIGHT:
-                sprites[i] = sf::Sprite(*textures["bn"]);
-                break;
-            case Piece::KING:
-                sprites[i] = sf::Sprite(*textures["bk"]);
-                break;
-            case Piece::QUEEN:
-                sprites[i] = sf::Sprite(*textures["bq"]);
-                break;
-            case Piece::ROOK:
-                sprites[i] = sf::Sprite(*textures["br"]);
-                break;
-            default:
-                break;
-            }
-        }
-        else
-        {
-            switch (pieceType)
-            {
-            case Piece::PAWN:
-                sprites[i] = sf::Sprite(*textures["wp"]);
-                break;
-            case Piece::BISHOP:
-                sprites[i] = sf::Sprite(*textures["wb"]);
-                break;
-            case Piece::KNIGHT:
-                sprites[i] = sf::Sprite(*textures["wn"]);
-                break;
-            case Piece::KING:
-                sprites[i] = sf::Sprite(*textures["wk"]);
-                break;
-            case Piece::QUEEN:
-                sprites[i] = sf::Sprite(*textures["wq"]);
-                break;
-            case Piece::ROOK:
-                sprites[i] = sf::Sprite(*textures["wr"]);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
 
 void GameEngine::loadTextures()
 {
@@ -132,17 +74,16 @@ void GameEngine::loadTextures()
     w_rook->loadFromFile("./ChessPieces/white_rook.png");
     w_pawn->loadFromFile("./ChessPieces/white_pawn.png");
 
-    textures["bk"] = b_king;
-    textures["bq"] = b_queen;
-    textures["bn"] = b_knight;
-    textures["bb"] = b_bishop;
-    textures["br"] = b_rook;
-    textures["bp"] = b_pawn;
-
-    textures["wk"] = w_king;
-    textures["wq"] = w_queen;
-    textures["wn"] = w_knight;
-    textures["wb"] = w_bishop;
-    textures["wr"] = w_rook;
-    textures["wp"] = w_pawn;
+    GameEngine::textures["bk"] = b_king;
+    GameEngine::textures["bq"] = b_queen;
+    GameEngine::textures["bn"] = b_knight;
+    GameEngine::textures["bb"] = b_bishop;
+    GameEngine::textures["br"] = b_rook;
+    GameEngine::textures["bp"] = b_pawn;
+    GameEngine::textures["wk"] = w_king;
+    GameEngine::textures["wq"] = w_queen;
+    GameEngine::textures["wn"] = w_knight;
+    GameEngine::textures["wb"] = w_bishop;
+    GameEngine::textures["wr"] = w_rook;
+    GameEngine::textures["wp"] = w_pawn;
 }
