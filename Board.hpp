@@ -5,42 +5,42 @@
 #include "Square.hpp"
 #include <stack>
 
-struct Position
+class Board
 {
-    Position()
-    {
-        for (int i = 0; i < 64; i++)
-        {
-            board[i] = new Square(0,i);
-        }
-    }
-    Square* board[64];
+private:
+    Square *board[64];
     bool whiteToMove = true;
     bool blackCastleKingSide = false;
     bool whiteCastleKingSide = false;
     bool blackCastleQueenSide = false;
     bool whiteCastleQueenSide = false;
-};
 
-class Board
-{
-    Position currentPosition;
-    std::stack<Position *> history;
-
-private:
 public:
     Board()
     {
-        currentPosition = ReadFen::readFenString(ReadFen::startingString);
-    }
-    Board(std::string fenString){
-        currentPosition = ReadFen::readFenString(fenString);
+        for (int i = 0; i < 64; i++)
+        {
+            board[i] = new Square();
+        }
     }
 
-    Square **getBoard() { return currentPosition.board; }
-    void loadBoard();
+    Square **getBoard() { return board; }
+    void setSquarePiece(int idx, Piece *other)
+    {
+        board[idx]->setPiece(other);
+    }
 
-    void makeMove();
+    void setWhiteToMove(bool t) { whiteToMove = t; }
+    void setBlackCastleKingSide(bool t) { blackCastleKingSide = t; }
+    void setWhiteCastleKingSide(bool t) { whiteCastleKingSide = t; }
+    void setBlackCastleQueenSide(bool t) { blackCastleQueenSide = t; }
+    void setWhiteCastleQueenSide(bool t) { whiteCastleQueenSide = t; }
+
+    bool getWhiteToMove() { return whiteToMove; }
+    bool getBlackCastleKingSide() { return blackCastleKingSide; }
+    bool getWhiteCastleKingSide() { return whiteCastleKingSide; }
+    bool getBlackCastleQueenSide() { return blackCastleQueenSide; }
+    bool getWhiteCastleQueenSide() { return whiteCastleQueenSide; }
 };
 
 #endif

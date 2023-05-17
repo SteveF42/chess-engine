@@ -9,8 +9,6 @@
 class GameEngine
 {
 private:
-    const int BOARDSIZE = 8;
-    const float SQUARESIZE = 25.f;
     const sf::Color LIGHTSQUARE = sf::Color(210, 140, 69);
     const sf::Color DARKSQUARE = sf::Color(255, 207, 159);
     const float screenOffsetMultiplyer = 1.5;
@@ -21,34 +19,24 @@ private:
     void drawBoard();
     void drawPieces();
     void updatePosition();
+    void movePiece();
+    bool movingPiece = false;
+    Piece* clickedPiece = nullptr;
 
 public:
+    static const int BOARDSIZE = 8;
+    static constexpr float SQUARESIZE = 25.f;
     static std::map<std::string, sf::Texture*> textures;
 
     GameEngine()
     {
         loadTextures();
-        gameBoard = new Board();
+        gameBoard = ReadFen::readFenString(ReadFen::startingString);
     }
 
     bool isActive() { return window->isOpen(); }
-    void update()
-    {
-        sf::Event event;
-        while (window->pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                window->close();
-        }
-        window->setSize(sf::Vector2u(1000.f, 1000.f));
 
-        window->clear();
-
-        this->drawBoard();
-        this->drawPieces();
-
-        window->display();
-    }
+    void update();
 };
 
 #endif

@@ -1,4 +1,6 @@
 #include "Piece.hpp"
+#include "GameEngine.hpp"
+#include <iostream>
 
 // const int Piece::PAWN = 1;
 // const int Piece::KNIGHT = 2;
@@ -13,3 +15,83 @@
 // const int blackMask = 0b10000;
 // const int whiteMask = 0b01000;
 // const int colourMask = whiteMask | blackMask;
+float scale;
+
+Piece::Piece(int pieceType, sf::Vector2f pos)
+{
+    sprite = getSprite(pieceType);
+    spritePosition = pos;
+    sprite->setPosition(pos);
+    scale = GameEngine::SQUARESIZE / sprite->getLocalBounds().height;
+    sprite->setScale(scale, scale);
+    pieceType = pieceType;
+}
+
+void Piece::setPiecePosition(float x, float y)
+{
+    spritePosition = sf::Vector2f(x / 5 - 12, y / 5 - 12);
+    sprite->setPosition(spritePosition);
+}
+void Piece::drawPiece(sf::RenderWindow *window)
+{
+    window->draw(*sprite);
+}
+
+sf::Sprite *Piece::getSprite(int currentPiece)
+{
+    int pieceType = Piece::getPieceType(currentPiece);
+    sf::Sprite *returnSprite = nullptr;
+    if (Piece::getPieceColor(currentPiece) == Piece::BLACK)
+    {
+        switch (pieceType)
+        {
+        case Piece::PAWN:
+            returnSprite = new sf::Sprite(*GameEngine::textures["bp"]);
+            break;
+        case Piece::BISHOP:
+            returnSprite = new sf::Sprite(*GameEngine::textures["bb"]);
+            break;
+        case Piece::KNIGHT:
+            returnSprite = new sf::Sprite(*GameEngine::textures["bn"]);
+            break;
+        case Piece::KING:
+            returnSprite = new sf::Sprite(*GameEngine::textures["bk"]);
+            break;
+        case Piece::QUEEN:
+            returnSprite = new sf::Sprite(*GameEngine::textures["bq"]);
+            break;
+        case Piece::ROOK:
+            returnSprite = new sf::Sprite(*GameEngine::textures["br"]);
+            break;
+        default:
+            break;
+        }
+    }
+    else
+    {
+        switch (pieceType)
+        {
+        case Piece::PAWN:
+            returnSprite = new sf::Sprite(*GameEngine::textures["wp"]);
+            break;
+        case Piece::BISHOP:
+            returnSprite = new sf::Sprite(*GameEngine::textures["wb"]);
+            break;
+        case Piece::KNIGHT:
+            returnSprite = new sf::Sprite(*GameEngine::textures["wn"]);
+            break;
+        case Piece::KING:
+            returnSprite = new sf::Sprite(*GameEngine::textures["wk"]);
+            break;
+        case Piece::QUEEN:
+            returnSprite = new sf::Sprite(*GameEngine::textures["wq"]);
+            break;
+        case Piece::ROOK:
+            returnSprite = new sf::Sprite(*GameEngine::textures["wr"]);
+            break;
+        default:
+            break;
+        }
+    }
+    return returnSprite;
+}

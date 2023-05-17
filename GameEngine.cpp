@@ -1,7 +1,64 @@
 #include "GameEngine.hpp"
 
-std::map<std::string, sf::Texture *> GameEngine::textures={};
+std::map<std::string, sf::Texture *> GameEngine::textures = {};
 
+void GameEngine::update()
+{
+    sf::Event event;
+    while (window->pollEvent(event))
+    {
+        if (event.type == sf::Event::Closed)
+            window->close();
+
+        if (event.type == sf::Event::MouseButtonPressed)
+        {
+            window->setMouseCursorGrabbed(true);
+        }
+        else if (event.type == sf::Event::MouseButtonReleased)
+        {
+            window->setMouseCursorGrabbed(false);
+        }
+    }
+    window->setSize(sf::Vector2u(1000.f, 1000.f));
+    window->clear();
+
+    this->movePiece();
+
+    this->drawBoard();
+    this->drawPieces();
+
+    window->display();
+}
+
+void GameEngine::movePiece()
+{
+    sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
+    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && !movingPiece)
+    {
+        Square **board = gameBoard->getBoard();
+        sf::Vector2u windowSize = window->getSize();
+        int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
+        if (squarePosition > 64 || squarePosition < 0)
+            return;
+
+        if (board[squarePosition]->hasNullPiece())
+            return;
+
+        clickedPiece = board[squarePosition]->getPiece();
+        movingPiece = true;
+    }
+    else if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && movingPiece)
+    {
+        if (clickedPiece == nullptr)
+            return;
+
+        clickedPiece->setPiecePosition(mousePosition.x, mousePosition.y);
+    }
+    else
+    {
+        movingPiece = false;
+    }
+}
 
 void GameEngine::drawBoard()
 {
@@ -24,27 +81,21 @@ void GameEngine::drawBoard()
 
 void GameEngine::drawPieces()
 {
+
     Square **arr = gameBoard->getBoard();
     for (int rank = 0; rank < BOARDSIZE; rank++)
     {
         for (int file = 0; file < BOARDSIZE; file++)
         {
             int position = (rank * 8) + file;
-            if (arr[position] == 0)
+            if (arr[position]->hasNullPiece())
                 continue;
 
-            sf::Sprite* sprite = arr[position]->getSprite();
-            if(sprite == nullptr) continue;
-
-            sprite->setScale(sf::Vector2f(0.19, 0.19));
-            sf::Vector2f pos(file * SQUARESIZE, rank * SQUARESIZE);
-            sprite->setPosition(pos);
-            window->draw(*sprite);
+            Piece *piece = arr[position]->getPiece();
+            piece->drawPiece(window);
         }
     }
 }
-
-
 
 void GameEngine::loadTextures()
 {

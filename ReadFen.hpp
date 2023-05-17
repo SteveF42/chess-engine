@@ -7,6 +7,6 @@ class ReadFen
 {
 public:
     static const std::string startingString;
-    static struct Position readFenString(const std::string fen);
+    static struct Board* readFenString(const std::string fen);
 };
 #endif

@@ -9,10 +9,5 @@ int main()
     while(engine.isActive()){
         engine.update();
     }
-
-    Position s = ReadFen::readFenString(ReadFen::startingString);
-    for(auto i : s.board){
-        std::cout << i;
-    }
     return 0;
 }
