@@ -17,14 +17,15 @@
 // const int colourMask = whiteMask | blackMask;
 float scale;
 
-Piece::Piece(int pieceType, sf::Vector2f pos)
+Piece::Piece(int pieceType, sf::Vector2f pos, int piecePosition)
 {
+    currentPosition = piecePosition;
     sprite = getSprite(pieceType);
     spritePosition = pos;
     sprite->setPosition(pos);
     scale = GameEngine::SQUARESIZE / sprite->getLocalBounds().height;
     sprite->setScale(scale, scale);
-    pieceType = pieceType;
+    this->pieceType = pieceType;
 }
 
 void Piece::setPiecePosition(float x, float y)

@@ -1,7 +1,7 @@
 #ifndef Piece_H
 #define Piece_H
 #include <SFML/Graphics.hpp>
-
+#include <iostream>
 
 class Piece
 {
@@ -16,6 +16,7 @@ private:
     sf::Vector2f spritePosition;
 
     int pieceType;
+    int currentPosition;
 
 public:
     static const int PAWN = 1;
@@ -31,10 +32,15 @@ public:
     static int getPieceType(int piece) { return piece & typeMask; }
     static int isColor(int piece, int color) { return (piece & colourMask) == color; }
 
-    int getPiece() { return getPieceType(pieceType); }
-    int getColor() { return getPieceColor(pieceType); }
+    Piece(int pieceType, sf::Vector2f pos, int piecePosition);
 
-    Piece(int pieceType, sf::Vector2f pos);
+    int getPieceType()
+    {
+        return getPieceType(pieceType);
+    }
+    int getPieceColor() { return getPieceColor(pieceType); }
+    int getPiecePosition() { return currentPosition; }
+    void setPiecePosition(int positionOnBoard) { currentPosition = positionOnBoard; }
 
     void setPiecePosition(float x, float y);
     void drawPiece(sf::RenderWindow *window);

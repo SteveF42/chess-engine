@@ -5,9 +5,22 @@
 #include "Square.hpp"
 #include <stack>
 
+struct Move
+{
+    int start;
+    int target;
+    Move(int s, int t){
+        start = s;
+        target = t;
+    }
+};
+
 class Board
 {
 private:
+    void boardEdgeData();
+    int numSquaresToEdge[64][8];
+
     Square *board[64];
     bool whiteToMove = true;
     bool blackCastleKingSide = false;
@@ -15,13 +28,28 @@ private:
     bool blackCastleQueenSide = false;
     bool whiteCastleQueenSide = false;
 
+    std::vector<Move> getSlidingTypeMoves(Piece* other);
+    std::vector<Move> *getPawnMoves();
+    std::vector<Move> *getKnightMoves();
+    std::vector<Move> *getKingMoves();
+    const int slidingMovesOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
+    const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
+    std::vector<std::vector<Move>> moveset;
+    std::vector<Move> pieceAvailableMoves(Piece *piece);
+
 public:
+    // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
+    void generateMovesInCurrentPosition();
+    std::vector<Move> getPieceMoves(int idx);
+
+
     Board()
     {
         for (int i = 0; i < 64; i++)
         {
-            board[i] = new Square();
+            board[i] = new Square(i);
         }
+        boardEdgeData();
     }
 
     Square **getBoard() { return board; }
@@ -29,6 +57,8 @@ public:
     {
         board[idx]->setPiece(other);
     }
+    void getBoardMoves(int *moves);
+    void makeMove(Piece *current, int indxTo);
 
     void setWhiteToMove(bool t) { whiteToMove = t; }
     void setBlackCastleKingSide(bool t) { blackCastleKingSide = t; }
