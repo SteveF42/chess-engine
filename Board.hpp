@@ -9,7 +9,8 @@ struct Move
 {
     int start;
     int target;
-    Move(int s, int t){
+    Move(int s, int t)
+    {
         start = s;
         target = t;
     }
@@ -28,7 +29,7 @@ private:
     bool blackCastleQueenSide = false;
     bool whiteCastleQueenSide = false;
 
-    std::vector<Move> getSlidingTypeMoves(Piece* other);
+    std::vector<Move> getSlidingTypeMoves(Piece *other);
     std::vector<Move> *getPawnMoves();
     std::vector<Move> *getKnightMoves();
     std::vector<Move> *getKingMoves();
@@ -41,7 +42,16 @@ public:
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     void generateMovesInCurrentPosition();
     std::vector<Move> getPieceMoves(int idx);
-
+    bool validateMove(int startIdx, int target)
+    {
+        for (auto move : moveset[startIdx]){
+            if(move.target == target){
+                // call a move swap function or something
+                return true;
+            }
+        }
+        return false;
+    }
 
     Board()
     {

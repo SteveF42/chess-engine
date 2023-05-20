@@ -42,7 +42,7 @@ public:
     int getPiecePosition() { return currentPosition; }
     void setPiecePosition(int positionOnBoard) { currentPosition = positionOnBoard; }
 
-    void setPiecePosition(float x, float y);
+    void setPieceCoordinates(float x, float y);
     void drawPiece(sf::RenderWindow *window);
 };
 

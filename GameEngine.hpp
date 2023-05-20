@@ -15,12 +15,13 @@ private:
     Board *gameBoard;
 
     static void loadTextures();
+    void selectPieceOrSquare();
+    void placePiece();
     void drawBoard();
     void drawPieces();
     void updatePosition();
     void movePiece();
     void drawHighLightedSquare();
-    bool movingPiece = false;
     Square* highLightedSquare = nullptr;
 
 public:
@@ -31,7 +32,7 @@ public:
     GameEngine()
     {
         loadTextures();
-        gameBoard = ReadFen::readFenString("r1b1k1nr/p2p1pNp/n2B4/1p1NP2P/6P1/3P1Q2/P1P1K3/q5b1 b - - 0 1");
+        gameBoard = ReadFen::readFenString("r1k5/1p1n4/p1p2p2/P1Pp4/3p3r/4q3/3KB3/3R1R2 w - - 0 1");
         gameBoard->generateMovesInCurrentPosition();
     }
 

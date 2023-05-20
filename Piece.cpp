@@ -28,9 +28,9 @@ Piece::Piece(int pieceType, sf::Vector2f pos, int piecePosition)
     this->pieceType = pieceType;
 }
 
-void Piece::setPiecePosition(float x, float y)
+void Piece::setPieceCoordinates(float x, float y)
 {
-    spritePosition = sf::Vector2f(x / 5 - 12, y / 5 - 12);
+    spritePosition = sf::Vector2f(x,y);
     sprite->setPosition(spritePosition);
 }
 void Piece::drawPiece(sf::RenderWindow *window)
