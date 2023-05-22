@@ -32,17 +32,79 @@ std::vector<Move> Board::pieceAvailableMoves(Piece *piece)
     {
         return getSlidingTypeMoves(piece);
     }
-    // else if (pieceType == Piece::KNIGHT)
-    // {
-    // }
+    else if (pieceType == Piece::KNIGHT)
+    {
+        return getKnightMoves(piece);
+    }
     // else if (pieceType == Piece::PAWN)
     // {
     // }
-    // else if (pieceType == Piece::KING)
-    // {
-    // }
+    else if (pieceType == Piece::KING)
+    {
+        return getKingMoves(piece);
+    }
 
     return {};
+}
+
+std::vector<Move> Board::getKingMoves(Piece *piece)
+{
+    // looping through this array offset  kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
+
+    int currentLocation = piece->getPiecePosition();
+    int pieceColor = piece->getPieceColor();
+    std::vector<Move> validMoves;
+    for (int i = 0; i < 8; i++)
+    {
+        int target = currentLocation + kingMovesOffsets[i];
+        if (target >= 64 || target < 0)
+            continue;
+
+        Move move(currentLocation, target);
+        if (board[target]->hasNullPiece())
+        {
+            validMoves.push_back(move);
+            continue;
+        }
+        
+        Piece *otherPiece = board[target]->getPiece();
+        int otherPieceColor = otherPiece->getPieceColor();
+        int currentPieceColor = pieceColor;
+        if (otherPieceColor == currentPieceColor)
+            continue;
+        validMoves.push_back(move);
+    }
+    return validMoves;
+}
+
+std::vector<Move> Board::getKnightMoves(Piece *piece)
+{
+    // looping through this array offset  knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
+
+    int currentLocation = piece->getPiecePosition();
+    int pieceColor = piece->getPieceColor();
+    std::vector<Move> validMoves;
+    for (int i = 0; i < 8; i++)
+    {
+        int target = currentLocation + knightOffset[i];
+        if (target >= 64 || target < 0)
+            continue;
+
+        Move move(currentLocation, target);
+        if (board[target]->hasNullPiece())
+        {
+            validMoves.push_back(move);
+            continue;
+        }
+        
+        Piece *otherPiece = board[target]->getPiece();
+        int otherPieceColor = otherPiece->getPieceColor();
+        int currentPieceColor = pieceColor;
+        if (otherPieceColor == currentPieceColor)
+            continue;
+        validMoves.push_back(move);
+    }
+    return validMoves;
 }
 
 std::vector<Move> Board::getSlidingTypeMoves(Piece *piece)

@@ -16,7 +16,7 @@ private:
 
     static void loadTextures();
     void selectPieceOrSquare();
-    void placePiece();
+    void placePiece(std::string s);
     void drawBoard();
     void drawPieces();
     void updatePosition();

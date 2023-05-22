@@ -30,10 +30,11 @@ private:
     bool whiteCastleQueenSide = false;
 
     std::vector<Move> getSlidingTypeMoves(Piece *other);
-    std::vector<Move> *getPawnMoves();
-    std::vector<Move> *getKnightMoves();
-    std::vector<Move> *getKingMoves();
+    std::vector<Move> getPawnMoves(Piece *other);
+    std::vector<Move> getKnightMoves(Piece *other);
+    std::vector<Move> getKingMoves(Piece *other);
     const int slidingMovesOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
+    const int kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
     const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
     std::vector<std::vector<Move>> moveset;
     std::vector<Move> pieceAvailableMoves(Piece *piece);
@@ -44,8 +45,10 @@ public:
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target)
     {
-        for (auto move : moveset[startIdx]){
-            if(move.target == target){
+        for (auto move : moveset[startIdx])
+        {
+            if (move.target == target)
+            {
                 // call a move swap function or something
                 return true;
             }

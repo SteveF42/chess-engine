@@ -2,7 +2,6 @@
 #include <iostream>
 
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
-
 void GameEngine::update()
 {
     sf::Event event;
@@ -11,18 +10,21 @@ void GameEngine::update()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        if (event.type == sf::Event::MouseButtonPressed)
-        {
-            if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
-                placePiece();
-            // sets a square to be highlighted alongside a piece moves if that's the case
-            selectPieceOrSquare();
-        }
-        if (event.type == sf::Event::MouseButtonReleased)
+        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
             if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
             {
-                placePiece();
+                placePiece("");
+            }
+            selectPieceOrSquare();
+            // sets a square to be highlighted alongside a piece moves if that's the case
+            break;
+        }
+        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+        {
+            if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
+            {
+                placePiece("drop");
             }
         }
     }
@@ -38,7 +40,8 @@ void GameEngine::update()
     window->display();
 }
 
-void GameEngine::placePiece()
+bool flag = false;
+void GameEngine::placePiece(std::string s)
 {
     sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
     sf::Vector2u windowSize = window->getSize();
@@ -53,20 +56,30 @@ void GameEngine::placePiece()
         Piece *piece = highLightedSquare->getPiece();
         piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
         highLightedSquare = nullptr;
+        flag = false;
     }
     else
     {
-        // put the piece back
         Piece *piece = highLightedSquare->getPiece();
         int homeSquare = highLightedSquare->getSquarePosition();
         int file = homeSquare % 8;
         int rank = homeSquare / 8;
         piece->setPieceCoordinates(file * SQUARESIZE, rank * SQUARESIZE);
+        if (s == "drop" && flag && squarePosition == highLightedSquare->getSquarePosition())
+        {
+            highLightedSquare = nullptr;
+            flag = false;
+        }
+        else if (s == "drop")
+        {
+            flag = true;
+        }
     }
 }
 
 void GameEngine::selectPieceOrSquare()
 {
+
     sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
     Square **board = gameBoard->getBoard();
     sf::Vector2u windowSize = window->getSize();
@@ -75,9 +88,16 @@ void GameEngine::selectPieceOrSquare()
     if (squarePosition >= 64 || squarePosition < 0)
         return;
 
-    highLightedSquare = board[squarePosition];
-    if (highLightedSquare->hasNullPiece())
+    if (board[squarePosition]->hasNullPiece())
+    {
+        highLightedSquare = nullptr;
+        flag = false;
         return;
+    }
+
+    if(highLightedSquare != nullptr && highLightedSquare->getSquarePosition() != squarePosition)
+        flag = false;
+    highLightedSquare = board[squarePosition];
 }
 
 void GameEngine::drawHighLightedSquare()
@@ -119,13 +139,13 @@ void GameEngine::movePiece()
     if (highLightedSquare == nullptr || highLightedSquare->hasNullPiece())
         return;
 
+    sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
+    Square **board = gameBoard->getBoard();
+    sf::Vector2u windowSize = window->getSize();
+    // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
+    int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
     {
-        sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
-        Square **board = gameBoard->getBoard();
-        sf::Vector2u windowSize = window->getSize();
-        // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
-        int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
         // this also looks terrible but its just a ratio. for some reason the pieces like to move 5 to 1 ratio so that's why divide by 5, 12 is the center of each square since
         highLightedSquare->getPiece()->setPieceCoordinates(mousePosition.x / 5 - (SQUARESIZE / 2), mousePosition.y / 5 - (SQUARESIZE / 2));
     }
