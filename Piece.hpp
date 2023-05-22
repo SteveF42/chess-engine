@@ -32,7 +32,7 @@ public:
     static int getPieceType(int piece) { return piece & typeMask; }
     static int isColor(int piece, int color) { return (piece & colourMask) == color; }
 
-    Piece(int pieceType, sf::Vector2f pos, int piecePosition);
+    Piece(int pieceType, int piecePosition);
 
     int getPieceType()
     {
@@ -44,6 +44,7 @@ public:
 
     void setPieceCoordinates(float x, float y);
     void drawPiece(sf::RenderWindow *window);
+    void setPieceSprite(sf::Sprite *other, sf::Vector2f pos);
 };
 
 #endif

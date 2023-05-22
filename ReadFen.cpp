@@ -59,7 +59,7 @@ Board *ReadFen::readFenString(std::string fen)
             int pieceType = lookUpTable[c];
             int pieceColor = isWhite ? Piece::WHITE : Piece::BLACK;
             sf::Vector2f spritePosition(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
-            Piece *newPiece = new Piece(pieceType | pieceColor, spritePosition, position);
+            Piece *newPiece = new Piece(pieceType | pieceColor, position);
 
             newBoard->setSquarePiece(position, newPiece);
 
