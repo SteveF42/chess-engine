@@ -57,6 +57,7 @@ void GameEngine::placePiece(std::string s)
         piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
         highLightedSquare = nullptr;
         flag = false;
+        // gameBoard->makeMove();
     }
     else
     {

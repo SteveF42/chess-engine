@@ -47,6 +47,10 @@ std::vector<Move> Board::pieceAvailableMoves(Piece *piece)
     return {};
 }
 
+std::vector<Move> Board::getPawnMoves(Piece *piece)
+{
+}
+
 std::vector<Move> Board::getKingMoves(Piece *piece)
 {
     // looping through this array offset  kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
@@ -66,7 +70,7 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
             validMoves.push_back(move);
             continue;
         }
-        
+
         Piece *otherPiece = board[target]->getPiece();
         int otherPieceColor = otherPiece->getPieceColor();
         int currentPieceColor = pieceColor;
@@ -84,11 +88,20 @@ std::vector<Move> Board::getKnightMoves(Piece *piece)
     int currentLocation = piece->getPiecePosition();
     int pieceColor = piece->getPieceColor();
     std::vector<Move> validMoves;
+    int rank = currentLocation / 8;
+    int file = currentLocation - rank * 8;
     for (int i = 0; i < 8; i++)
     {
         int target = currentLocation + knightOffset[i];
         if (target >= 64 || target < 0)
             continue;
+
+        int knightRank = target / 8;
+        int knightFile = target - knightRank * 8;
+
+        int maxJumpCoord = std::max(std::abs(file - knightFile), std::abs(rank - knightRank));
+        std::cout << maxJumpCoord << '\n';
+        if(maxJumpCoord != 2) continue;
 
         Move move(currentLocation, target);
         if (board[target]->hasNullPiece())
@@ -96,7 +109,7 @@ std::vector<Move> Board::getKnightMoves(Piece *piece)
             validMoves.push_back(move);
             continue;
         }
-        
+
         Piece *otherPiece = board[target]->getPiece();
         int otherPieceColor = otherPiece->getPieceColor();
         int currentPieceColor = pieceColor;
