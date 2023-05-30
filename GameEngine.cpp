@@ -108,6 +108,8 @@ void GameEngine::selectPieceOrSquare()
         flag = false;
 
     Piece *piece = board[squarePosition]->getPiece();
+
+    highLightedSquare = nullptr;
     if (piece->getPieceColor() == Piece::BLACK && gameBoard->getWhiteToMove())
         return;
     if (piece->getPieceColor() == Piece::WHITE && !gameBoard->getWhiteToMove())
