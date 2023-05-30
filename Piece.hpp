@@ -41,6 +41,9 @@ public:
     int getPiecePosition() { return currentPosition; }
     void setPiecePosition(int positionOnBoard) { currentPosition = positionOnBoard; }
 
+    void setCapture(){
+        sprite->setPosition(99999,99999);
+    }
     void setPieceCoordinates(float x, float y);
     void drawPiece(sf::RenderWindow *window);
     void setPieceSprite(sf::Sprite *other, sf::Vector2f pos);

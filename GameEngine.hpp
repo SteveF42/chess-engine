@@ -26,6 +26,8 @@ private:
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;
 
+
+    // SpriteData pieces[2][6];
     SpriteData *allSprites[32];
     SpriteData *activeSprites[32];
 
@@ -50,7 +52,7 @@ public:
     {
         loadTextures();
         loadSprites();
-        gameBoard = ReadFen::readFenString("r1k5/1p1n4/p1p2p2/P1Pp4/3p3r/4q3/3KB3/3R1R2 w - - 0 1");
+        gameBoard = ReadFen::readFenString(ReadFen::startingString);
         gameBoard->generateMovesInCurrentPosition();
         assignSprites();
     }

@@ -2,6 +2,11 @@
 #include <iostream>
 
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
+// this is very very bad, I really shouldn't be doing it this way
+// I'm too lazy to change it, it works.
+bool flag = false;
+bool placed = false;
+
 void GameEngine::update()
 {
     sf::Event event;
@@ -12,13 +17,17 @@ void GameEngine::update()
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
+            placed = false;
             if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
             {
                 placePiece("");
             }
-            selectPieceOrSquare();
+            if (!placed)
+            {
+                placed = false;
+                selectPieceOrSquare();
+            }
             // sets a square to be highlighted alongside a piece moves if that's the case
-            break;
         }
         else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
         {
@@ -40,7 +49,6 @@ void GameEngine::update()
     window->display();
 }
 
-bool flag = false;
 void GameEngine::placePiece(std::string s)
 {
     sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
@@ -55,9 +63,11 @@ void GameEngine::placePiece(std::string s)
         int rank = squarePosition / 8;
         Piece *piece = highLightedSquare->getPiece();
         piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
+        gameBoard->makeMove(highLightedSquare->getSquarePosition(), squarePosition);
+        gameBoard->generateMovesInCurrentPosition();
         highLightedSquare = nullptr;
         flag = false;
-        // gameBoard->makeMove();
+        placed = true;
     }
     else
     {
@@ -98,6 +108,12 @@ void GameEngine::selectPieceOrSquare()
 
     if (highLightedSquare != nullptr && highLightedSquare->getSquarePosition() != squarePosition)
         flag = false;
+
+    Piece* piece =board[squarePosition]->getPiece();
+    if (piece->getPieceColor() == Piece::BLACK && gameBoard->getWhiteToMove()) return;
+    if (piece->getPieceColor() == Piece::WHITE && !gameBoard->getWhiteToMove()) return;
+
+
     highLightedSquare = board[squarePosition];
 }
 
@@ -141,12 +157,12 @@ void GameEngine::movePiece()
         return;
 
     sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
-    Square **board = gameBoard->getBoard();
     sf::Vector2u windowSize = window->getSize();
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
     {
+        Piece *piece = highLightedSquare->getPiece();
         // this also looks terrible but its just a ratio. for some reason the pieces like to move 5 to 1 ratio so that's why divide by 5, 12 is the center of each square since
         highLightedSquare->getPiece()->setPieceCoordinates(mousePosition.x / 5 - (SQUARESIZE / 2), mousePosition.y / 5 - (SQUARESIZE / 2));
     }
@@ -189,7 +205,7 @@ void GameEngine::drawPieces()
     }
 }
 
-//assigns sprite pointers to each board in a given position, this way each board isn't instantuating hundreds of new sprites for each position
+// assigns sprite pointers to each board in a given position, this way each board isn't instantuating hundreds of new sprites for each position
 void GameEngine::assignSprites()
 {
     Square **board = gameBoard->getBoard();

@@ -72,7 +72,10 @@ Board *ReadFen::readFenString(std::string fen)
     {
         newBoard->setWhiteToMove(true);
     }
-    newBoard->setWhiteToMove(false);
+    else
+    {
+        newBoard->setWhiteToMove(false);
+    }
 
     std::string s = "";
     // read third section castling rights

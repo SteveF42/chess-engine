@@ -38,23 +38,13 @@ private:
     const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
     std::vector<std::vector<Move>> moveset;
     std::vector<Move> pieceAvailableMoves(Piece *piece);
+    std::vector<Piece*> capturedPieces;
 
 public:
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     void generateMovesInCurrentPosition();
     std::vector<Move> getPieceMoves(int idx);
-    bool validateMove(int startIdx, int target)
-    {
-        for (auto move : moveset[startIdx])
-        {
-            if (move.target == target)
-            {
-                // call a move swap function or something
-                return true;
-            }
-        }
-        return false;
-    }
+    bool validateMove(int startIdx, int target);
 
     Board()
     {
@@ -71,7 +61,7 @@ public:
         board[idx]->setPiece(other);
     }
     void getBoardMoves(int *moves);
-    void makeMove(Piece *current, int indxTo);
+    void makeMove(int from, int to);
 
     void setWhiteToMove(bool t) { whiteToMove = t; }
     void setBlackCastleKingSide(bool t) { blackCastleKingSide = t; }
