@@ -56,22 +56,20 @@ void GameEngine::placePiece(std::string s)
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
     // validate the move
+
+    Piece *piece = highLightedSquare->getPiece();
     bool validMove = gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition);
     if (validMove)
     {
         int file = squarePosition % 8;
         int rank = squarePosition / 8;
-        Piece *piece = highLightedSquare->getPiece();
         piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
-        gameBoard->makeMove(highLightedSquare->getSquarePosition(), squarePosition);
-        gameBoard->generateMovesInCurrentPosition();
         highLightedSquare = nullptr;
         flag = false;
         placed = true;
     }
     else
     {
-        Piece *piece = highLightedSquare->getPiece();
         int homeSquare = highLightedSquare->getSquarePosition();
         int file = homeSquare % 8;
         int rank = homeSquare / 8;
@@ -109,10 +107,11 @@ void GameEngine::selectPieceOrSquare()
     if (highLightedSquare != nullptr && highLightedSquare->getSquarePosition() != squarePosition)
         flag = false;
 
-    Piece* piece =board[squarePosition]->getPiece();
-    if (piece->getPieceColor() == Piece::BLACK && gameBoard->getWhiteToMove()) return;
-    if (piece->getPieceColor() == Piece::WHITE && !gameBoard->getWhiteToMove()) return;
-
+    Piece *piece = board[squarePosition]->getPiece();
+    if (piece->getPieceColor() == Piece::BLACK && gameBoard->getWhiteToMove())
+        return;
+    if (piece->getPieceColor() == Piece::WHITE && !gameBoard->getWhiteToMove())
+        return;
 
     highLightedSquare = board[squarePosition];
 }
@@ -221,7 +220,7 @@ void GameEngine::assignSprites()
         Piece *piece = square->getPiece();
         for (int j = 0; j < 32; j++)
         {
-            if (allSprites[j] == nullptr)
+            if (allSprites[j]->inUse)
                 continue;
 
             SpriteData *data = allSprites[j];
@@ -232,8 +231,8 @@ void GameEngine::assignSprites()
             {
                 sf::Vector2f pos(file * SQUARESIZE, rank * SQUARESIZE);
                 piece->setPieceSprite(data->sprite, pos);
-                activeSprites[j] = allSprites[j];
-                allSprites[j] = nullptr;
+                allSprites[j]->inUse = true;
+                allSprites[j]->piecePtr = piece;
                 break;
             }
         }

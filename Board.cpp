@@ -14,6 +14,21 @@ bool Board::validateMove(int startIdx, int target)
         if (move.target == target)
         {
             // call a move swap function or something
+            Piece *pawn = board[startIdx]->getPiece();
+            int startRank = startIdx / 8;
+            int endRank = target / 8;
+
+            if (pawn->getPieceType() == Piece::PAWN && std::abs(startRank - endRank) == 2)
+            {
+                possibleEnPassant = (startIdx + target) / 2;
+                std::cout << "POSSIBLE EN PESSANT ON " << (startIdx + target) / 2 << '\n';
+            }
+            else
+            {
+                possibleEnPassant = 999;
+            }
+            this->makeMove(move);
+            this->generateMovesInCurrentPosition();
             return true;
         }
     }
@@ -74,14 +89,14 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     int attackRight = 7 * moveOffset;
     int forward1 = currentPosition + 8 * moveOffset;
 
-    if(forward1 >= 64 || forward1 < 0){
+    if (forward1 >= 64 || forward1 < 0)
+    {
         return {};
     }
 
-
-    if (board[currentPosition + 8 * moveOffset]->hasNullPiece())
+    if (board[forward1]->hasNullPiece())
     {
-        Move move1(currentPosition, currentPosition + 8 * moveOffset);
+        Move move1(currentPosition, forward1);
         validMoves.push_back(move1);
     }
     if (pieceRank == pawnStart && board[currentPosition + 16 * moveOffset]->hasNullPiece())
@@ -99,6 +114,17 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     {
         Move takeRight(currentPosition, currentPosition + attackRight);
         validMoves.push_back(takeRight);
+    }
+    // enPassant moves
+    if (currentPosition + attackRight == possibleEnPassant)
+    {
+        Move takeRightPassant(currentPosition, currentPosition + attackRight, true);
+        validMoves.push_back(takeRightPassant);
+    }
+    if (currentPosition + attackLeft == possibleEnPassant)
+    {
+        Move takeLeftPassant(currentPosition, currentPosition + attackLeft, true);
+        validMoves.push_back(takeLeftPassant);
     }
 
     return validMoves;
@@ -214,18 +240,26 @@ std::vector<Move> Board::getSlidingTypeMoves(Piece *piece)
     return possibleMoves;
 }
 
-void Board::makeMove(int from, int to)
+void Board::makeMove(Move move)
 {
-    Square *startSquare = board[from];
-    Square *endSquare = board[to];
+    Square *startSquare = board[move.start];
+    Square *endSquare = board[move.target];
+    Piece *piece = startSquare->getPiece();
+    
 
     if (!endSquare->hasNullPiece())
     {
         capturedPieces.push_back(endSquare->getPiece());
     }
+    else if (move.isEnPassant)
+    {
+        int offset = move.start - move.target == 9 ? -1 : 1;
+        Piece *pawn = board[move.start + offset]->getPiece();
+        capturedPieces.push_back(pawn);
+        board[move.start + offset]->setPiece(nullptr);
+    }
 
-    Piece *piece = startSquare->getPiece();
-    piece->setPiecePosition(to);
+    piece->setPiecePosition(move.target);
     endSquare->setPiece(piece);
     startSquare->setPiece(nullptr);
     whiteToMove = !whiteToMove;

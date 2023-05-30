@@ -7,12 +7,14 @@ struct SpriteData
 {
     sf::Sprite *sprite;
     int pieceType;
+    bool inUse = false;
+    Piece* piecePtr;
     SpriteData(sf::Sprite *other, int type)
     {
         sprite = other;
         pieceType = type;
     }
-    SpriteData(){}
+    SpriteData() {}
 };
 
 class GameEngine
@@ -26,10 +28,8 @@ private:
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;
 
-
     // SpriteData pieces[2][6];
     SpriteData *allSprites[32];
-    SpriteData *activeSprites[32];
 
     static void loadTextures();
     void loadSprites();

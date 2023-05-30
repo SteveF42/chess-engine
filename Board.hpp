@@ -9,11 +9,14 @@ struct Move
 {
     int start;
     int target;
-    Move(int s, int t)
+    bool isEnPassant;
+    Move(int s, int t, bool possiblePassant = false)
     {
         start = s;
         target = t;
+        isEnPassant = possiblePassant;
     }
+    Move() {}
 };
 
 class Board
@@ -21,6 +24,7 @@ class Board
 private:
     void boardEdgeData();
     int numSquaresToEdge[64][8];
+    int possibleEnPassant;
 
     Square *board[64];
     bool whiteToMove = true;
@@ -61,7 +65,7 @@ public:
         board[idx]->setPiece(other);
     }
     void getBoardMoves(int *moves);
-    void makeMove(int from, int to);
+    void makeMove(Move move);
 
     void setWhiteToMove(bool t) { whiteToMove = t; }
     void setBlackCastleKingSide(bool t) { blackCastleKingSide = t; }
