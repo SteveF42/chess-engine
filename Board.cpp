@@ -8,7 +8,6 @@ bool searchVector(std::vector<int> &v, int i)
     {
         if (v[k] == i)
         {
-            std::cout << "move valid: " << i << '\n';
             return true;
         }
     }
@@ -254,15 +253,8 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
         Move move(currentLocation, target);
         if (board[target]->hasNullPiece())
         {
-            int originalKingPos = whiteToMove ? whiteKing->getPiecePosition() : blackKing->getPiecePosition();
-            if (whiteToMove)
-            {
-                whiteKing->setPiecePosition(target);
-            }
-            else
-            {
-                blackKing->setPiecePosition(target);
-            }
+            int originalKingPos = piece->getPiecePosition();
+            piece->setPiecePosition(target);
 
             checkForPinsAndChecks(pins, checks, inCheck);
 
@@ -270,15 +262,7 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
             {
                 validMoves.push_back(move);
             }
-
-            if (whiteToMove)
-            {
-                whiteKing->setPiecePosition(originalKingPos);
-            }
-            else
-            {
-                blackKing->setPiecePosition(originalKingPos);
-            }
+            piece->setPiecePosition(originalKingPos);
             continue;
         }
 
@@ -288,16 +272,8 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
         if (otherPieceColor == currentPieceColor)
             continue;
 
-        int originalKingPos = whiteToMove ? whiteKing->getPiecePosition() : blackKing->getPiecePosition();
-        if (whiteToMove)
-        {
-            whiteKing->setPiecePosition(target);
-        }
-        else
-        {
-            blackKing->setPiecePosition(target);
-        }
-
+        int originalKingPos = piece->getPiecePosition();
+        piece->setPiecePosition(target);
         checkForPinsAndChecks(pins, checks, inCheck);
 
         if (!inCheck)
@@ -305,14 +281,7 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
             validMoves.push_back(move);
         }
 
-        if (whiteToMove)
-        {
-            whiteKing->setPiecePosition(originalKingPos);
-        }
-        else
-        {
-            blackKing->setPiecePosition(originalKingPos);
-        }
+        piece->setPiecePosition(originalKingPos);
     }
     return validMoves;
 }
@@ -529,7 +498,7 @@ void Board::setSquarePiece(int idx, Piece *other)
 void Board::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<CheckOrPin> &checks, bool &inCheck)
 {
     inCheck = false;
-    int enemyColor = !whiteToMove ? Piece::WHITE : Piece::BLACK;
+    int enemyColor = whiteToMove ? Piece::BLACK : Piece::WHITE;
     int allyColor = whiteToMove ? Piece::WHITE : Piece::BLACK;
     Piece *kingPiece = whiteToMove ? whiteKing : blackKing;
     int kingPosition = kingPiece->getPiecePosition();
@@ -571,7 +540,7 @@ void Board::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<Che
                 // any direction 1 square away is king
 
                 int pieceType = curr->getPieceType();
-                if ((pieceType == Piece::ROOK && 0 <= i <= 3) || (4 <= j <= 7 && pieceType == Piece::BISHOP) || (j == 1 && pieceType == Piece::PAWN && ((enemyColor == Piece::WHITE and (i == 4 || i == 6)) || (enemyColor == Piece::BLACK and (i == 5 || i == 7)))) || pieceType == Piece::QUEEN || (j == 1 && pieceType == Piece::KING))
+                if ((pieceType == Piece::ROOK && 0 <= i <= 3) || (4 <= i <= 7 && pieceType == Piece::BISHOP) || (j == 0 && pieceType == Piece::PAWN && ((enemyColor == Piece::WHITE and (i == 4 || i == 6)) || (enemyColor == Piece::BLACK and (i == 5 || i == 7)))) || pieceType == Piece::QUEEN || (j == 0 && pieceType == Piece::KING))
                 {
 
                     if (!pinExists) // piece is in check
