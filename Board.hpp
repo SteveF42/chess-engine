@@ -12,6 +12,7 @@ struct Move
     bool isEnPassant;
     bool capture = false;
     int possibleEnPassant = 999;
+    int pieceType;
     Move(int s, int t, bool possiblePassant = false)
     {
         start = s;

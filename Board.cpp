@@ -47,7 +47,7 @@ void Board::generateMovesInCurrentPosition()
     std::vector<std::vector<Move>> moves;
     Piece *kingPiece = whiteToMove ? whiteKing : blackKing;
 
-    if (checkFlag)
+    if (inCheck)
     {
 
         if (this->checks.size() == 1) // if there is exactly one check location
@@ -167,14 +167,17 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
 
     bool piecePinned = false;
     int pinDirection = 999;
+    int c = 0;
     for (auto i : pins)
     {
         if (i.position == piece->getPiecePosition())
         {
             piecePinned = true;
             pinDirection = i.direction;
+            pins[c] = {};
             break;
         }
+        c++;
     }
 
     if (forward1 >= 64 || forward1 < 0)
@@ -236,12 +239,13 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
 std::vector<Move> Board::getKingMoves(Piece *piece)
 {
     // looping through this array offset  kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
-
     std::vector<CheckOrPin> pins;
     std::vector<CheckOrPin> checks;
 
     int currentLocation = piece->getPiecePosition();
     int pieceColor = piece->getPieceColor();
+    int file = currentLocation / 8;
+    int rank = currentLocation % 8;
     std::vector<Move> validMoves;
     for (int i = 0; i < 8; i++)
     {
@@ -250,37 +254,29 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
         if (target >= 64 || target < 0)
             continue;
 
+        int kingFile = target / 8;
+        int kingRank = target % 8;
+        int maxMove = std::max(std::abs(file - kingFile), std::abs(rank - kingRank));
+        if (maxMove != 1)
+            continue;
+
         Move move(currentLocation, target);
-        if (board[target]->hasNullPiece())
+        if (!board[target]->hasNullPiece())
         {
-            int originalKingPos = piece->getPiecePosition();
-            piece->setPiecePosition(target);
-
-            checkForPinsAndChecks(pins, checks, inCheck);
-
-            if (!inCheck)
-            {
-                validMoves.push_back(move);
-            }
-            piece->setPiecePosition(originalKingPos);
-            continue;
+            Piece *otherPiece = board[target]->getPiece();
+            int otherPieceColor = otherPiece->getPieceColor();
+            int currentPieceColor = pieceColor;
+            if (otherPieceColor == currentPieceColor)
+                continue;
         }
-
-        Piece *otherPiece = board[target]->getPiece();
-        int otherPieceColor = otherPiece->getPieceColor();
-        int currentPieceColor = pieceColor;
-        if (otherPieceColor == currentPieceColor)
-            continue;
 
         int originalKingPos = piece->getPiecePosition();
         piece->setPiecePosition(target);
         checkForPinsAndChecks(pins, checks, inCheck);
-
         if (!inCheck)
         {
             validMoves.push_back(move);
         }
-
         piece->setPiecePosition(originalKingPos);
     }
     return validMoves;
@@ -297,13 +293,17 @@ std::vector<Move> Board::getKnightMoves(Piece *piece)
     int file = currentLocation % 8;
 
     int piecePinned = false;
+
+    int c = 0;
     for (auto i : pins)
     {
         if (i.position == piece->getPiecePosition())
         {
             piecePinned = true;
+            pins[c] = {};
             break;
         }
+        c++;
     }
 
     for (int i = 0; i < 8; i++)
@@ -353,14 +353,18 @@ std::vector<Move> Board::getSlidingTypeMoves(Piece *piece)
 
     int piecePinned = false;
     int pinDirection = 9999;
+
+    int c = 0;
     for (auto i : pins)
     {
         if (i.position == piece->getPiecePosition())
         {
             piecePinned = true;
             pinDirection = i.direction;
+            pins[c] = {};
             break;
         }
+        c++;
     }
 
     for (int currentOffset = startIdx; currentOffset < endIdx; currentOffset++)
@@ -540,19 +544,20 @@ void Board::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<Che
                 // any direction 1 square away is king
 
                 int pieceType = curr->getPieceType();
-                if ((pieceType == Piece::ROOK && 0 <= i <= 3) || (4 <= i <= 7 && pieceType == Piece::BISHOP) || (j == 0 && pieceType == Piece::PAWN && ((enemyColor == Piece::WHITE and (i == 4 || i == 6)) || (enemyColor == Piece::BLACK and (i == 5 || i == 7)))) || pieceType == Piece::QUEEN || (j == 0 && pieceType == Piece::KING))
+                if ((pieceType == Piece::ROOK && i <= 3) || (pieceType == Piece::BISHOP && i >= 4) || (j == 0 && pieceType == Piece::PAWN && ((enemyColor == Piece::WHITE and (i == 4 || i == 6)) || (enemyColor == Piece::BLACK and (i == 5 || i == 7)))) || pieceType == Piece::QUEEN || (j == 0 && pieceType == Piece::KING))
                 {
 
                     if (!pinExists) // piece is in check
                     {
                         inCheck = true;
                         checks.push_back(CheckOrPin(target, slidingMovesOffsets[i]));
+                        break;
                     }
                     else // piece is pinned
                     {
                         pins.push_back(possiblePin);
+                        break;
                     }
-                    break;
                 }
                 break;
             }
