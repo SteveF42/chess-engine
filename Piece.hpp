@@ -37,12 +37,14 @@ public:
     {
         return getPieceType(pieceType);
     }
+    int getPieceTypeRaw() { return this->pieceType; }
+
     int getPieceColor() { return getPieceColor(pieceType); }
     int getPiecePosition() { return currentPosition; }
-    void setPiecePosition(int positionOnBoard) { currentPosition = positionOnBoard; }
-
-    void setCapture(){
-        sprite->setPosition(99999,99999);
+    void setPiecePosition(int positionOnBoard, bool overridePosition = false);
+    void setCapture()
+    {
+        sprite->setPosition(99999, 99999);
     }
     void setPieceCoordinates(float x, float y);
     void drawPiece(sf::RenderWindow *window);

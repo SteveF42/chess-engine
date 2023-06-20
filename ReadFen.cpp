@@ -79,10 +79,10 @@ Board *ReadFen::readFenString(std::string fen)
 
     std::string s = "";
     // read third section castling rights
-    newBoard->setBlackCastleKingSide(sections[2].find("K") ? true : false);
-    newBoard->setBlackCastleQueenSide(sections[2].find("Q") ? true : false);
-    newBoard->setWhiteCastleKingSide(sections[2].find("k") ? true : false);
-    newBoard->setWhiteCastleQueenSide(sections[2].find("q") ? true : false);
+    newBoard->setBlackCastleKingSide(sections[2].find('K') != std::string::npos ? true : false);
+    newBoard->setBlackCastleQueenSide(sections[2].find("Q") != std::string::npos ? true : false);
+    newBoard->setWhiteCastleKingSide(sections[2].find("k") != std::string::npos ? true : false);
+    newBoard->setWhiteCastleQueenSide(sections[2].find("q") != std::string::npos ? true : false);
 
     return newBoard;
 }

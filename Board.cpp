@@ -142,14 +142,15 @@ std::vector<std::vector<Move>> Board::pieceAvailableMoves()
         {
             pieceMoves = getPawnMoves(piece);
         }
-        else if (pieceType == Piece::KING)
-        {
-            pieceMoves = getKingMoves(piece);
-        }
         positionMoves[i] = pieceMoves;
     }
+    this->moveset = positionMoves;
+    auto whiteKingMoves = getKingMoves(whiteKing);
+    auto blackKingMoves = getKingMoves(blackKing);
+    moveset[whiteKing->getPiecePosition()] = whiteKingMoves;
+    moveset[blackKing->getPiecePosition()] = blackKingMoves;
 
-    return positionMoves;
+    return moveset;
 }
 
 std::vector<Move> Board::getPawnMoves(Piece *piece)
@@ -191,12 +192,14 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
         {
             // move forward 1
             Move move1(currentPosition, forward1);
+            move1.pieceType = piece->getPieceTypeRaw();
             validMoves.push_back(move1);
 
             // move forward 2
             if (pieceRank == pawnStart && board[currentPosition + 16 * moveOffset]->hasNullPiece())
             {
                 Move move2(currentPosition, currentPosition + 16 * moveOffset);
+                move2.pieceType = piece->getPieceTypeRaw();
                 validMoves.push_back(move2);
             }
         }
@@ -208,6 +211,7 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
         {
 
             Move takeLeft(currentPosition, currentPosition + attackLeft);
+            takeLeft.pieceType = piece->getPieceTypeRaw();
             validMoves.push_back(takeLeft);
         }
     }
@@ -218,6 +222,7 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
         {
 
             Move takeRight(currentPosition, currentPosition + attackRight);
+            takeRight.pieceType = piece->getPieceTypeRaw();
             validMoves.push_back(takeRight);
         }
     }
@@ -225,11 +230,13 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     if (currentPosition + attackRight == possibleEnPassant)
     {
         Move takeRightPassant(currentPosition, currentPosition + attackRight, true);
+        takeRightPassant.pieceType = piece->getPieceTypeRaw();
         validMoves.push_back(takeRightPassant);
     }
     if (currentPosition + attackLeft == possibleEnPassant)
     {
         Move takeLeftPassant(currentPosition, currentPosition + attackLeft, true);
+        takeLeftPassant.pieceType = piece->getPieceTypeRaw();
         validMoves.push_back(takeLeftPassant);
     }
 
@@ -261,6 +268,7 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
             continue;
 
         Move move(currentLocation, target);
+        move.pieceType = piece->getPieceTypeRaw();
         if (!board[target]->hasNullPiece())
         {
             Piece *otherPiece = board[target]->getPiece();
@@ -279,7 +287,41 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
         }
         piece->setPiecePosition(originalKingPos);
     }
+
+    getCastleMoves(validMoves, piece);
     return validMoves;
+}
+
+void Board::getCastleMoves(std::vector<Move> &validMoves, Piece *kingPiece)
+{
+    if (checkFlag)
+        return;
+
+    int currLocation = kingPiece->getPiecePosition();
+    if ((whiteToMove && whiteCastleKingSide && kingPiece->getPieceColor() == Piece::WHITE) || (!whiteToMove && blackCastleKingSide && kingPiece->getPieceColor() == Piece::BLACK)) // kingside castle
+    {
+        if (board[currLocation + 1]->hasNullPiece() && board[currLocation + 2]->hasNullPiece())
+        {
+            if (!squareUnderAttack(currLocation + 1, kingPiece->getPieceColor()) && !squareUnderAttack(currLocation + 2, kingPiece->getPieceColor()))
+            {
+                Move move(currLocation, currLocation + 2, false, true);
+                move.pieceType = kingPiece->getPieceTypeRaw();
+                validMoves.push_back(move);
+            }
+        }
+    }
+    if ((whiteToMove && whiteCastleQueenSide) || (!whiteToMove && blackCastleQueenSide)) // queenside castle
+    {
+        if (board[currLocation - 1]->hasNullPiece() && board[currLocation - 2]->hasNullPiece() && board[currLocation - 3]->hasNullPiece())
+        {
+            if (!squareUnderAttack(currLocation - 1, kingPiece->getPieceColor()) && !squareUnderAttack(currLocation - 2, kingPiece->getPieceColor()))
+            {
+                Move move(currLocation, currLocation - 2, false, true);
+                move.pieceType = kingPiece->getPieceTypeRaw();
+                validMoves.push_back(move);
+            }
+        }
+    }
 }
 
 std::vector<Move> Board::getKnightMoves(Piece *piece)
@@ -324,6 +366,7 @@ std::vector<Move> Board::getKnightMoves(Piece *piece)
             continue;
 
         Move move(currentLocation, target);
+        move.pieceType = piece->getPieceTypeRaw();
         if (board[target]->hasNullPiece())
         {
             validMoves.push_back(move);
@@ -377,6 +420,7 @@ std::vector<Move> Board::getSlidingTypeMoves(Piece *piece)
 
             int target = currentPosition + slidingMovesOffsets[currentOffset] * (n + 1);
             Move newMove(currentPosition, target);
+            newMove.pieceType = piece->getPieceTypeRaw();
 
             if (board[target]->hasNullPiece())
             {
@@ -424,6 +468,7 @@ void Board::makeMove(Move move)
         capturedPieces.push(capturedPiece);
         move.capture = true;
     }
+    // en passant move
     else if (move.isEnPassant)
     {
         int offset = move.start - move.target == 9 ? -1 : 1;
@@ -431,12 +476,75 @@ void Board::makeMove(Move move)
         capturedPieces.push(pawn);
         board[move.start + offset]->setPiece(nullptr);
     }
+    // castle move
+    else if (move.isCastle)
+    {
+        int startFile = move.start % 8;
+        int endFile = move.target % 8;
+        if (endFile - startFile == 2) // kingside castle
+        {
+            Piece *rook = board[move.target + 1]->getPiece();
+            rook->setPiecePosition(move.target - 1, true);
+            board[move.target - 1]->setPiece(rook);
+            board[move.target + 1]->setPiece(nullptr);
+        }
+        else // queen side castle
+        {
+            Piece *rook = board[move.target - 2]->getPiece();
+            rook->setPiecePosition(move.target + 1, true);
+            board[move.target - 2]->setPiece(nullptr);
+            board[move.target + 1]->setPiece(rook);
+        }
+    }
+
+    updateCastlingRights(move);
 
     piece->setPiecePosition(move.target);
     endSquare->setPiece(piece);
     startSquare->setPiece(nullptr);
     moveHistory.push(move);
     whiteToMove = !whiteToMove;
+}
+
+void Board::updateCastlingRights(const Move &move)
+{
+
+    if (Piece::getPieceType(move.pieceType) == Piece::KING && Piece::getPieceColor(move.pieceType) == Piece::BLACK)
+    {
+        this->blackCastleKingSide = false;
+        this->blackCastleQueenSide = false;
+    }
+    else if (Piece::getPieceType(move.pieceType) == Piece::KING && Piece::getPieceColor(move.pieceType) == Piece::WHITE)
+    {
+        this->whiteCastleKingSide = false;
+        this->whiteCastleQueenSide = false;
+    }
+    else if (Piece::getPieceType(move.pieceType) == Piece::ROOK && Piece::getPieceColor(move.pieceType) == Piece::WHITE)
+    {
+        int startRow = move.start / 8;
+        int startCol = move.start % 8;
+        if (startCol == 0 && startRow == 7)
+        {
+            this->whiteCastleQueenSide = false;
+        }
+        else if (startCol == 7 && startRow == 7)
+        {
+            this->whiteCastleKingSide = false;
+        }
+    }
+    else if (Piece::getPieceType(move.pieceType) == Piece::ROOK && Piece::getPieceColor(move.pieceType) == Piece::BLACK)
+    {
+        int startRow = move.start / 8;
+        int startCol = move.start % 8;
+        if (startCol == 0 && startRow == 0)
+        {
+            this->blackCastleQueenSide = false;
+        }
+        else if (startCol == 7 && startRow == 0)
+        {
+            this->blackCastleKingSide = false;
+        }
+    }
 }
 
 void Board::unmakeMove()
@@ -475,6 +583,11 @@ void Board::unmakeMove()
         capturedPieces.pop();
         endSquare->setPiece(returnedPiece);
         returnedPiece->setPiecePosition(target);
+    }
+
+    // undo castle move
+    if (pastMove.isCastle)
+    {
     }
 
     whiteToMove = !whiteToMove;
@@ -593,6 +706,25 @@ void Board::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<Che
         }
     }
 }
+
+bool Board::squareUnderAttack(int square, int pieceColor)
+{
+
+    for (auto piece : moveset)
+    {
+        for (auto move : piece)
+        {
+            Piece *other = board[move.start]->getPiece();
+            if (move.target == square && other->getPieceColor() != pieceColor)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void Board::boardEdgeData()
 {
     for (int file = 0; file < 8; file++)

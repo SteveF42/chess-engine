@@ -40,3 +40,14 @@ void Piece::drawPiece(sf::RenderWindow *window)
 {
     window->draw(*sprite);
 }
+
+void Piece::setPiecePosition(int positionOnBoard, bool overridePosition /*=false*/)
+{
+    currentPosition = positionOnBoard;
+    int rank = currentPosition / 8;
+    int file = currentPosition % 8;
+    if (overridePosition)
+    {
+        this->setPieceCoordinates(GameEngine::SQUARESIZE * file, GameEngine::SQUARESIZE * rank);
+    }
+}
