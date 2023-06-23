@@ -462,11 +462,42 @@ void Board::makeMove(Move move)
         this->possibleEnPassant = 999;
     }
 
+    // capture
     if (!endSquare->hasNullPiece())
     {
         Piece *capturedPiece = endSquare->getPiece();
         capturedPieces.push(capturedPiece);
         move.capture = true;
+
+        if (capturedPiece->getPieceType() == Piece::ROOK)
+        {
+            int rank = capturedPiece->getPiecePosition() / 8;
+            int file = capturedPiece->getPiecePosition() % 8;
+            if (capturedPiece->getPieceColor() == Piece::WHITE)
+            {
+                // queen side  rook
+                if (file == 0 && rank == 7)
+                {
+                    whiteCastleQueenSide = false;
+                }
+                // king side  rook
+                else if (file == 7 && rank == 7)
+                {
+                    whiteCastleKingSide = false;
+                }
+            }
+            else
+            {
+                if (file == 0 && rank == 0)
+                {
+                    blackCastleQueenSide = false;
+                }
+                else if (file == 7 && rank == 0)
+                {
+                    blackCastleKingSide = false;
+                }
+            }
+        }
     }
     // en passant move
     else if (move.isEnPassant)
