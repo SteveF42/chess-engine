@@ -36,6 +36,10 @@ void GameEngine::update()
                 placePiece("drop");
             }
         }
+        // else if (event.type == sf::Event::KeyPressed && event.KeyPressed == sf::Keyboard::A)
+        // {
+        //     this->gameBoard->unmakeMove();
+        // }
     }
 
     window->setSize(sf::Vector2u(1000.f, 1000.f));
@@ -64,6 +68,20 @@ void GameEngine::placePiece(std::string s)
         int file = squarePosition % 8;
         int rank = squarePosition / 8;
         piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
+        // pawn promotion
+        if (piece->getPieceType() == Piece::PAWN)
+        {
+            if (piece->getPieceColor() == Piece::WHITE && rank == 0)
+            {
+                // pawn promotion idk
+                drawPromotionPieces(squarePosition, Piece::WHITE);
+            }
+            else if (piece->getPieceColor() == Piece::BLACK && rank == 7)
+            {
+                // pawn promotion idk
+                drawPromotionPieces(squarePosition, Piece::BLACK);
+            }
+        }
         highLightedSquare = nullptr;
         flag = false;
         placed = true;
@@ -203,6 +221,104 @@ void GameEngine::drawPieces()
             Piece *piece = arr[position]->getPiece();
             piece->drawPiece(window);
         }
+    }
+}
+
+// overides the main game loop to allow for pawn promotion pieces to be drawn
+void GameEngine::drawPromotionPieces(int squareIndx, int color)
+{
+
+    int offset = color == Piece::WHITE ? 1 : -1;
+    sf::Texture *horsieTexture = color == Piece::WHITE ? textures["wn"] : textures["bn"];
+    sf::Texture *queenTexture = color == Piece::WHITE ? textures["wq"] : textures["bq"];
+    sf::Texture *rookTexture = color == Piece::WHITE ? textures["wr"] : textures["br"];
+    sf::Texture *bishopTexture = color == Piece::WHITE ? textures["wb"] : textures["bb"];
+
+    auto queen = new sf::Sprite(*queenTexture);
+    auto rook = new sf::Sprite(*rookTexture);
+    auto bishop = new sf::Sprite(*bishopTexture);
+    auto horsie = new sf::Sprite(*horsieTexture);
+
+    sf::Sprite *sprites[] = {queen, rook, bishop, horsie};
+
+    int chosenPiece = -1;
+    sf::Event event;
+
+    // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
+    bool done = false;
+    while (true)
+    {
+        while (window->pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+            {
+                window->close();
+                throw;
+            }
+
+            // main logic for choosing an upgraded piece
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+            {
+                sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
+                sf::Vector2u windowSize = window->getSize();
+                int clickedSquare = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
+                int pieceChoice = std::abs(squareIndx - clickedSquare);
+                if (pieceChoice == 0)
+                {
+                    // gameBoard->promotePawn(squareIndx, Piece::QUEEN | color, sprites[0]);
+                    delete rook;
+                    delete bishop;
+                    delete horsie;
+                    done = true;
+                }
+                else if (pieceChoice == 8)
+                {
+                    std::cout << 1 << '\n';
+                    delete queen;
+                    delete bishop;
+                    delete horsie;
+                    done = true;
+                }
+                else if (pieceChoice == 16)
+                {
+                    std::cout << 2 << '\n';
+                    delete queen;
+                    delete rook;
+                    delete horsie;
+                    done = true;
+                }
+                else if (pieceChoice == 24)
+                {
+                    std::cout << 3 << '\n';
+                    delete queen;
+                    delete rook;
+                    delete bishop;
+                    done = true;
+                }
+            }
+        }
+        if (done)
+            break;
+
+        window->setSize(sf::Vector2u(1000.f, 1000.f));
+        window->clear();
+        this->drawBoard();
+        this->drawPieces();
+
+        // draws the pice choices
+        for (int i = 0; i < 4; i++)
+        {
+            int squareToDrawOn = squareIndx + (i * 8 * offset);
+            int rank = squareToDrawOn / 8;
+            int file = squareToDrawOn % 8;
+            float scale = GameEngine::SQUARESIZE / sprites[i]->getLocalBounds().height;
+            sprites[i]->setPosition(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
+            sprites[i]->setScale(scale, scale);
+
+            window->draw(*sprites[i]);
+        }
+
+        window->display();
     }
 }
 

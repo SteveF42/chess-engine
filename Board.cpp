@@ -191,52 +191,55 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
         if (!piecePinned || pinDirection == 8 * moveOffset) // move is up or down the board
         {
             // move forward 1
-            Move move1(currentPosition, forward1);
-            move1.pieceType = piece->getPieceTypeRaw();
+            Move move1(currentPosition, forward1, piece->getPieceTypeRaw());
             validMoves.push_back(move1);
 
             // move forward 2
             if (pieceRank == pawnStart && board[currentPosition + 16 * moveOffset]->hasNullPiece())
             {
-                Move move2(currentPosition, currentPosition + 16 * moveOffset);
-                move2.pieceType = piece->getPieceTypeRaw();
+                Move move2(currentPosition, currentPosition + 16 * moveOffset, piece->getPieceTypeRaw());
                 validMoves.push_back(move2);
             }
         }
     }
-    // left capture
-    if (!board[currentPosition + attackLeft]->hasNullPiece() && board[currentPosition + attackLeft]->getPiece()->getPieceColor() != piece->getPieceColor())
-    {
-        if (!piecePinned || pinDirection == 9 * moveOffset)
-        {
 
-            Move takeLeft(currentPosition, currentPosition + attackLeft);
-            takeLeft.pieceType = piece->getPieceTypeRaw();
-            validMoves.push_back(takeLeft);
+    // left capture
+    if ((currentPosition + attackLeft) > 0 && (currentPosition + attackLeft) < 64)
+    {
+
+        if (!board[currentPosition + attackLeft]->hasNullPiece() && board[currentPosition + attackLeft]->getPiece()->getPieceColor() != piece->getPieceColor())
+        {
+            if (!piecePinned || pinDirection == 9 * moveOffset)
+            {
+
+                Move takeLeft(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw());
+                validMoves.push_back(takeLeft);
+            }
         }
     }
     // right capture
-    if (!board[currentPosition + attackRight]->hasNullPiece() && board[currentPosition + attackRight]->getPiece()->getPieceColor() != piece->getPieceColor())
+    if ((currentPosition + attackRight) > 0 && (currentPosition + attackRight) < 64)
     {
-        if (!piecePinned || pinDirection == 7 * moveOffset)
-        {
 
-            Move takeRight(currentPosition, currentPosition + attackRight);
-            takeRight.pieceType = piece->getPieceTypeRaw();
-            validMoves.push_back(takeRight);
+        if (!board[currentPosition + attackRight]->hasNullPiece() && board[currentPosition + attackRight]->getPiece()->getPieceColor() != piece->getPieceColor())
+        {
+            if (!piecePinned || pinDirection == 7 * moveOffset)
+            {
+
+                Move takeRight(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw());
+                validMoves.push_back(takeRight);
+            }
         }
     }
     // enPassant moves
     if (currentPosition + attackRight == possibleEnPassant)
     {
-        Move takeRightPassant(currentPosition, currentPosition + attackRight, true);
-        takeRightPassant.pieceType = piece->getPieceTypeRaw();
+        Move takeRightPassant(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw(), true);
         validMoves.push_back(takeRightPassant);
     }
     if (currentPosition + attackLeft == possibleEnPassant)
     {
-        Move takeLeftPassant(currentPosition, currentPosition + attackLeft, true);
-        takeLeftPassant.pieceType = piece->getPieceTypeRaw();
+        Move takeLeftPassant(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw(), true);
         validMoves.push_back(takeLeftPassant);
     }
 
@@ -267,8 +270,8 @@ std::vector<Move> Board::getKingMoves(Piece *piece)
         if (maxMove != 1)
             continue;
 
-        Move move(currentLocation, target);
-        move.pieceType = piece->getPieceTypeRaw();
+        Move move(currentLocation, target, piece->getPieceTypeRaw());
+
         if (!board[target]->hasNullPiece())
         {
             Piece *otherPiece = board[target]->getPiece();
@@ -304,7 +307,7 @@ void Board::getCastleMoves(std::vector<Move> &validMoves, Piece *kingPiece)
         {
             if (!squareUnderAttack(currLocation + 1, kingPiece->getPieceColor()) && !squareUnderAttack(currLocation + 2, kingPiece->getPieceColor()))
             {
-                Move move(currLocation, currLocation + 2, false, true);
+                Move move(currLocation, currLocation + 2, kingPiece->getPieceTypeRaw(), false, true);
                 move.pieceType = kingPiece->getPieceTypeRaw();
                 validMoves.push_back(move);
             }
@@ -316,8 +319,7 @@ void Board::getCastleMoves(std::vector<Move> &validMoves, Piece *kingPiece)
         {
             if (!squareUnderAttack(currLocation - 1, kingPiece->getPieceColor()) && !squareUnderAttack(currLocation - 2, kingPiece->getPieceColor()))
             {
-                Move move(currLocation, currLocation - 2, false, true);
-                move.pieceType = kingPiece->getPieceTypeRaw();
+                Move move(currLocation, currLocation - 2, kingPiece->getPieceTypeRaw(), false, true);
                 validMoves.push_back(move);
             }
         }
@@ -365,7 +367,7 @@ std::vector<Move> Board::getKnightMoves(Piece *piece)
         if (maxJumpCoord != 2)
             continue;
 
-        Move move(currentLocation, target);
+        Move move(currentLocation, target, piece->getPieceTypeRaw());
         move.pieceType = piece->getPieceTypeRaw();
         if (board[target]->hasNullPiece())
         {
@@ -419,8 +421,7 @@ std::vector<Move> Board::getSlidingTypeMoves(Piece *piece)
                 continue;
 
             int target = currentPosition + slidingMovesOffsets[currentOffset] * (n + 1);
-            Move newMove(currentPosition, target);
-            newMove.pieceType = piece->getPieceTypeRaw();
+            Move newMove(currentPosition, target, piece->getPieceTypeRaw());
 
             if (board[target]->hasNullPiece())
             {
@@ -506,6 +507,18 @@ void Board::makeMove(Move move)
         Piece *pawn = board[move.start + offset]->getPiece();
         capturedPieces.push(pawn);
         board[move.start + offset]->setPiece(nullptr);
+    }
+    // pawn promotion
+    else if (piece->getPieceType() == Piece::PAWN)
+    {
+        if (piece->getPieceColor() == Piece::WHITE && endSquare->getSquarePosition() == 0)
+        {
+            move.pawnPromotion = true;
+        }
+        else if (piece->getPieceColor() == Piece::BLACK && endSquare->getSquarePosition() == 7)
+        {
+            move.pawnPromotion = true;
+        }
     }
     // castle move
     else if (move.isCastle)
@@ -754,6 +767,11 @@ bool Board::squareUnderAttack(int square, int pieceColor)
     }
 
     return false;
+}
+
+void Board::promotePawn(int pieceLocation, int pieceType, sf::Sprite *upgrade = nullptr)
+{
+
 }
 
 void Board::boardEdgeData()

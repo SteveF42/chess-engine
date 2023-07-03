@@ -20,7 +20,7 @@ struct SpriteData
 class GameEngine
 {
 private:
-    const sf::Color LIGHTSQUARE = sf::Color(210, 140, 69);
+    const sf::Color LIGHTSQUARE = sf::Color(220, 140, 69);
     const sf::Color DARKSQUARE = sf::Color(255, 207, 159);
     const sf::Color RED = sf::Color(255, 0, 0, 100);
     const sf::Color ORANGE = sf::Color(255, 165, 0, 100);
@@ -41,6 +41,7 @@ private:
     void updatePosition();
     void movePiece();
     void drawHighLightedSquare();
+    void drawPromotionPieces(int file,int color);
     Square *highLightedSquare = nullptr;
 
 public:
