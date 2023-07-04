@@ -42,10 +42,7 @@ public:
     int getPieceColor() { return getPieceColor(pieceType); }
     int getPiecePosition() { return currentPosition; }
     void setPiecePosition(int positionOnBoard, bool overridePosition = false);
-    void setCapture()
-    {
-        sprite->setPosition(99999, 99999);
-    }
+    void setPieceType(int type) { this->pieceType = type; }
     void setPieceCoordinates(float x, float y);
     void drawPiece(sf::RenderWindow *window);
     void setPieceSprite(sf::Sprite *other, sf::Vector2f pos);

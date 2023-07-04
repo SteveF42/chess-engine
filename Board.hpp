@@ -89,7 +89,7 @@ private:
 public:
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     void generateMovesInCurrentPosition();
-    void promotePawn(int pieceLocation, int pieceType, sf::Sprite *upgrade = nullptr);
+    void promotePawn(int pieceLocation, int pieceType);
     void unmakeMove();
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);

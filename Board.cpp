@@ -769,9 +769,9 @@ bool Board::squareUnderAttack(int square, int pieceColor)
     return false;
 }
 
-void Board::promotePawn(int pieceLocation, int pieceType, sf::Sprite *upgrade = nullptr)
+void Board::promotePawn(int pieceLocation, int pieceType)
 {
-
+    board[pieceLocation]->getPiece()->setPieceType(pieceType);
 }
 
 void Board::boardEdgeData()

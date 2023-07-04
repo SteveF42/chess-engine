@@ -265,7 +265,8 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 int pieceChoice = std::abs(squareIndx - clickedSquare);
                 if (pieceChoice == 0)
                 {
-                    // gameBoard->promotePawn(squareIndx, Piece::QUEEN | color, sprites[0]);
+                    gameBoard->promotePawn(squareIndx, Piece::QUEEN | color);
+
                     delete rook;
                     delete bishop;
                     delete horsie;
@@ -273,7 +274,8 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 }
                 else if (pieceChoice == 8)
                 {
-                    std::cout << 1 << '\n';
+                    gameBoard->promotePawn(squareIndx, Piece::ROOK | color);
+
                     delete queen;
                     delete bishop;
                     delete horsie;
@@ -281,7 +283,7 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 }
                 else if (pieceChoice == 16)
                 {
-                    std::cout << 2 << '\n';
+                    gameBoard->promotePawn(squareIndx, Piece::BISHOP | color);
                     delete queen;
                     delete rook;
                     delete horsie;
@@ -289,7 +291,7 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 }
                 else if (pieceChoice == 24)
                 {
-                    std::cout << 3 << '\n';
+                    gameBoard->promotePawn(squareIndx, Piece::KNIGHT | color);
                     delete queen;
                     delete rook;
                     delete bishop;
