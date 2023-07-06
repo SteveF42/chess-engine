@@ -24,6 +24,9 @@ Piece::Piece(int pieceType, int piecePosition)
 }
 void Piece::setPieceSprite(sf::Sprite *other, sf::Vector2f pos)
 {
+    if(this->sprite != nullptr){
+        delete sprite;
+    }
     sprite = other;
     spritePosition = pos;
     sprite->setPosition(pos);

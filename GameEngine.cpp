@@ -59,16 +59,16 @@ void GameEngine::placePiece(std::string s)
     sf::Vector2u windowSize = window->getSize();
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
+    int file = squarePosition % 8;
+    int rank = squarePosition / 8;
     // validate the move
 
     Piece *piece = highLightedSquare->getPiece();
+    // pawn promotion
     bool validMove = gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition);
     if (validMove)
     {
-        int file = squarePosition % 8;
-        int rank = squarePosition / 8;
         piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
-        // pawn promotion
         if (piece->getPieceType() == Piece::PAWN)
         {
             if (piece->getPieceColor() == Piece::WHITE && rank == 0)
@@ -85,13 +85,15 @@ void GameEngine::placePiece(std::string s)
         highLightedSquare = nullptr;
         flag = false;
         placed = true;
+        // I have to break out the generate moves function from the board class to take into account the potential pawn promotion
+        gameBoard->generateMovesInCurrentPosition();
     }
     else
     {
         int homeSquare = highLightedSquare->getSquarePosition();
-        int file = homeSquare % 8;
-        int rank = homeSquare / 8;
-        piece->setPieceCoordinates(file * SQUARESIZE, rank * SQUARESIZE);
+        int homeFile = homeSquare % 8;
+        int homeRank = homeSquare / 8;
+        piece->setPieceCoordinates(homeFile * SQUARESIZE, homeRank * SQUARESIZE);
         if (s == "drop" && flag && squarePosition == highLightedSquare->getSquarePosition())
         {
             highLightedSquare = nullptr;
@@ -244,6 +246,11 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
     int chosenPiece = -1;
     sf::Event event;
 
+    sf::RectangleShape rectangle(sf::Vector2(SQUARESIZE, SQUARESIZE));
+    int x = (squareIndx % 8) * GameEngine::SQUARESIZE;
+    int y = (squareIndx / 8) * GameEngine::SQUARESIZE;
+    auto pos = sf::Vector2((float)x, (float)y);
+
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     bool done = false;
     while (true)
@@ -263,9 +270,12 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 sf::Vector2u windowSize = window->getSize();
                 int clickedSquare = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
                 int pieceChoice = std::abs(squareIndx - clickedSquare);
+                Piece *piece = gameBoard->getBoard()[squareIndx]->getPiece();
+
                 if (pieceChoice == 0)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::QUEEN | color);
+                    piece->setPieceSprite(sprites[0], sf::Vector2f(x, y));
 
                     delete rook;
                     delete bishop;
@@ -275,6 +285,7 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 else if (pieceChoice == 8)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::ROOK | color);
+                    piece->setPieceSprite(sprites[1], sf::Vector2f(x, y));
 
                     delete queen;
                     delete bishop;
@@ -284,6 +295,8 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 else if (pieceChoice == 16)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::BISHOP | color);
+                    piece->setPieceSprite(sprites[2], sf::Vector2f(x, y));
+
                     delete queen;
                     delete rook;
                     delete horsie;
@@ -292,6 +305,8 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 else if (pieceChoice == 24)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::KNIGHT | color);
+                    piece->setPieceSprite(sprites[3], sf::Vector2f(x, y));
+
                     delete queen;
                     delete rook;
                     delete bishop;
@@ -307,7 +322,16 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
         this->drawBoard();
         this->drawPieces();
 
-        // draws the pice choices
+        // draw over the origin square
+        rectangle.setPosition(pos);
+        rectangle.setFillColor(LIGHTSQUARE);
+        if ((x + y) % 2 == 0)
+        {
+            rectangle.setFillColor(DARKSQUARE);
+        }
+        window->draw(rectangle);
+
+        // draws the piece choices
         for (int i = 0; i < 4; i++)
         {
             int squareToDrawOn = squareIndx + (i * 8 * offset);

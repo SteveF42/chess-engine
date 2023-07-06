@@ -1,6 +1,7 @@
 #include "Board.hpp"
 #include <vector>
 #include <iostream>
+#include "GameEngine.hpp"
 
 bool searchVector(std::vector<int> &v, int i)
 {
@@ -26,7 +27,6 @@ bool Board::validateMove(int startIdx, int target)
         if (move.target == target)
         {
             this->makeMove(move);
-            this->generateMovesInCurrentPosition();
             return true;
         }
     }
@@ -771,7 +771,8 @@ bool Board::squareUnderAttack(int square, int pieceColor)
 
 void Board::promotePawn(int pieceLocation, int pieceType)
 {
-    board[pieceLocation]->getPiece()->setPieceType(pieceType);
+    Piece *piece = board[pieceLocation]->getPiece();
+    piece->setPieceType(pieceType);
 }
 
 void Board::boardEdgeData()
