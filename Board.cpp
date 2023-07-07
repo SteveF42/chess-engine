@@ -161,6 +161,8 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     int pawnPromotion = piece->getPieceColor() == Piece::WHITE ? 0 : 7;
 
     int pieceRank = currentPosition / 8;
+    int pawnFile = (currentPosition % 8);
+
     std::vector<Move> validMoves;
     int attackLeft = 9 * moveOffset;
     int attackRight = 7 * moveOffset;
@@ -204,7 +206,7 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     }
 
     // left capture
-    if ((currentPosition + attackLeft) > 0 && (currentPosition + attackLeft) < 64)
+    if ((currentPosition + attackLeft) > 0 && (currentPosition + attackLeft) < 64 && pawnFile != 0 && pawnFile != 7)
     {
 
         if (!board[currentPosition + attackLeft]->hasNullPiece() && board[currentPosition + attackLeft]->getPiece()->getPieceColor() != piece->getPieceColor())
@@ -237,7 +239,7 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
         Move takeRightPassant(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw(), true);
         validMoves.push_back(takeRightPassant);
     }
-    if (currentPosition + attackLeft == possibleEnPassant)
+    if (currentPosition + attackLeft == possibleEnPassant && pawnFile != 0 && pawnFile != 7)
     {
         Move takeLeftPassant(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw(), true);
         validMoves.push_back(takeLeftPassant);

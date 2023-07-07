@@ -266,6 +266,7 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
             // main logic for choosing an upgraded piece
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
+                //this stuff can probably be broken out into a function when I get to implmenting the AI
                 sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
                 sf::Vector2u windowSize = window->getSize();
                 int clickedSquare = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
