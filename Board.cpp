@@ -531,14 +531,14 @@ void Board::makeMove(Move move)
         if (endFile - startFile == 2) // kingside castle
         {
             Piece *rook = board[move.target + 1]->getPiece();
-            rook->setPiecePosition(move.target - 1, true);
+            rook->setPiecePosition(move.target - 1);
             board[move.target - 1]->setPiece(rook);
             board[move.target + 1]->setPiece(nullptr);
         }
         else // queen side castle
         {
             Piece *rook = board[move.target - 2]->getPiece();
-            rook->setPiecePosition(move.target + 1, true);
+            rook->setPiecePosition(move.target + 1);
             board[move.target - 2]->setPiece(nullptr);
             board[move.target + 1]->setPiece(rook);
         }
@@ -549,10 +549,7 @@ void Board::makeMove(Move move)
     oldRights.blackCastleQueenSide = this->blackCastleQueenSide;
     oldRights.whiteCastleKingSide = this->whiteCastleKingSide;
     oldRights.whiteCastleQueenSide = this->whiteCastleQueenSide;
-    std::cout << "WhiteCastleKing: " << whiteCastleKingSide << '\n';
-    std::cout << "WhiteCastleQueen: " << whiteCastleQueenSide << '\n';
-    std::cout << "BlackCastleKing: " << blackCastleKingSide << '\n';
-    std::cout << "BlackCastleKing: " << blackCastleQueenSide << '\n';
+
     castlingHistory.push(oldRights);
     updateCastlingRights(move);
 
@@ -617,7 +614,7 @@ void Board::unmakeMove()
     Piece *movedPiece = target->getPiece();
 
     // moves piece back to original square
-    movedPiece->setPiecePosition(move.start, true);
+    movedPiece->setPiecePosition(move.start);
     start->setPiece(movedPiece);
     target->setPiece(nullptr);
 
@@ -648,14 +645,14 @@ void Board::unmakeMove()
         if (endFile - startFile == 2) // kingside castle
         {
             Piece *rook = board[move.target - 1]->getPiece();
-            rook->setPiecePosition(move.target + 1, true);
+            rook->setPiecePosition(move.target + 1);
             board[move.target + 1]->setPiece(rook);
             board[move.target - 1]->setPiece(nullptr);
         }
         else // queen side castle
         {
             Piece *rook = board[move.target + 1]->getPiece();
-            rook->setPiecePosition(move.target - 2, true);
+            rook->setPiecePosition(move.target - 2);
             board[move.target - 2]->setPiece(rook);
             board[move.target + 1]->setPiece(nullptr);
         }

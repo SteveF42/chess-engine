@@ -2,13 +2,14 @@
 #define GameEngine_H
 #include <SFML/Graphics.hpp>
 #include "Board.hpp"
+#include <map>
 
 struct SpriteData
 {
     sf::Sprite *sprite;
     int pieceType;
     bool inUse = false;
-    Piece* piecePtr;
+    Piece *piecePtr;
     SpriteData(sf::Sprite *other, int type)
     {
         sprite = other;
@@ -30,18 +31,17 @@ private:
 
     // SpriteData pieces[2][6];
     SpriteData *allSprites[32];
+    std::map<int, sf::Sprite> pieceSprites;
 
     static void loadTextures();
     void loadSprites();
-    void assignSprites();
     void selectPieceOrSquare();
     void placePiece(std::string s);
     void drawBoard();
     void drawPieces();
-    void updatePosition();
     void movePiece();
     void drawHighLightedSquare();
-    void drawPromotionPieces(int file,int color);
+    void drawPromotionPieces(int file, int color);
     Square *highLightedSquare = nullptr;
 
 public:
@@ -51,11 +51,10 @@ public:
 
     GameEngine()
     {
+        gameBoard = ReadFen::readFenString(ReadFen::startingString);
         loadTextures();
         loadSprites();
-        gameBoard = ReadFen::readFenString(ReadFen::startingString);
         gameBoard->generateMovesInCurrentPosition();
-        assignSprites();
     }
 
     bool isActive() { return window->isOpen(); }

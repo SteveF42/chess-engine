@@ -45,10 +45,10 @@ void GameEngine::update()
     window->setSize(sf::Vector2u(1000.f, 1000.f));
     window->clear();
 
-    this->movePiece();
     this->drawBoard();
     this->drawHighLightedSquare();
     this->drawPieces();
+    this->movePiece();
 
     window->display();
 }
@@ -68,7 +68,8 @@ void GameEngine::placePiece(std::string s)
     bool validMove = gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition);
     if (validMove)
     {
-        piece->setPieceCoordinates(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
+        sf::Sprite &sprite = pieceSprites[piece->getPieceTypeRaw()];
+        sprite.setPosition(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
         if (piece->getPieceType() == Piece::PAWN)
         {
             if (piece->getPieceColor() == Piece::WHITE && rank == 0)
@@ -93,7 +94,8 @@ void GameEngine::placePiece(std::string s)
         int homeSquare = highLightedSquare->getSquarePosition();
         int homeFile = homeSquare % 8;
         int homeRank = homeSquare / 8;
-        piece->setPieceCoordinates(homeFile * SQUARESIZE, homeRank * SQUARESIZE);
+        sf::Sprite &sprite = pieceSprites[piece->getPieceTypeRaw()];
+        sprite.setPosition(homeFile * SQUARESIZE, homeRank * SQUARESIZE);
         if (s == "drop" && flag && squarePosition == highLightedSquare->getSquarePosition())
         {
             highLightedSquare = nullptr;
@@ -102,6 +104,7 @@ void GameEngine::placePiece(std::string s)
         else if (s == "drop")
         {
             flag = true;
+            placed = true;
         }
     }
 }
@@ -185,7 +188,10 @@ void GameEngine::movePiece()
     {
         Piece *piece = highLightedSquare->getPiece();
         // this also looks terrible but its just a ratio. for some reason the pieces like to move 5 to 1 ratio so that's why divide by 5, 12 is the center of each square since
-        highLightedSquare->getPiece()->setPieceCoordinates(mousePosition.x / 5 - (SQUARESIZE / 2), mousePosition.y / 5 - (SQUARESIZE / 2));
+        // highLightedSquare->getPiece()->setPieceCoordinates(mousePosition.x / 5 - (SQUARESIZE / 2), mousePosition.y / 5 - (SQUARESIZE / 2));
+        sf::Sprite &clickedSprite = pieceSprites[piece->getPieceTypeRaw()];
+        clickedSprite.setPosition(mousePosition.x / 5 - (SQUARESIZE / 2), mousePosition.y / 5 - (SQUARESIZE / 2));
+        window->draw(clickedSprite);
     }
 }
 
@@ -217,11 +223,18 @@ void GameEngine::drawPieces()
         for (int file = 0; file < BOARDSIZE; file++)
         {
             int position = (rank * 8) + file;
+            if (highLightedSquare != nullptr && highLightedSquare->getSquarePosition() == position && placed == false)
+                continue;
             if (arr[position]->hasNullPiece())
                 continue;
 
             Piece *piece = arr[position]->getPiece();
-            piece->drawPiece(window);
+            sf::Sprite &sprite = pieceSprites[piece->getPieceTypeRaw()];
+            float scale = GameEngine::SQUARESIZE / sprite.getLocalBounds().height;
+            sprite.setScale(scale, scale);
+            sprite.setPosition(file * SQUARESIZE, rank * SQUARESIZE);
+
+            window->draw(sprite);
         }
     }
 }
@@ -266,7 +279,7 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
             // main logic for choosing an upgraded piece
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
-                //this stuff can probably be broken out into a function when I get to implmenting the AI
+                // this stuff can probably be broken out into a function when I get to implmenting the AI
                 sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
                 sf::Vector2u windowSize = window->getSize();
                 int clickedSquare = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
@@ -276,47 +289,33 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
                 if (pieceChoice == 0)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::QUEEN | color);
-                    piece->setPieceSprite(sprites[0], sf::Vector2f(x, y));
-
-                    delete rook;
-                    delete bishop;
-                    delete horsie;
                     done = true;
                 }
                 else if (pieceChoice == 8)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::ROOK | color);
-                    piece->setPieceSprite(sprites[1], sf::Vector2f(x, y));
-
-                    delete queen;
-                    delete bishop;
-                    delete horsie;
                     done = true;
                 }
                 else if (pieceChoice == 16)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::BISHOP | color);
-                    piece->setPieceSprite(sprites[2], sf::Vector2f(x, y));
-
-                    delete queen;
-                    delete rook;
-                    delete horsie;
                     done = true;
                 }
                 else if (pieceChoice == 24)
                 {
                     gameBoard->promotePawn(squareIndx, Piece::KNIGHT | color);
-                    piece->setPieceSprite(sprites[3], sf::Vector2f(x, y));
-
-                    delete queen;
-                    delete rook;
-                    delete bishop;
                     done = true;
                 }
             }
         }
         if (done)
+        {
+            delete queen;
+            delete rook;
+            delete bishop;
+            delete horsie;
             break;
+        }
 
         window->setSize(sf::Vector2u(1000.f, 1000.f));
         window->clear();
@@ -350,71 +349,37 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
 }
 
 // assigns sprite pointers to each board in a given position, this way each board isn't instantuating hundreds of new sprites for each position
-void GameEngine::assignSprites()
-{
-    Square **board = gameBoard->getBoard();
-
-    for (int i = 0; i < 64; i++)
-    {
-        int file = i % 8;
-        int rank = i / 8;
-        Square *square = board[i];
-        if (square->hasNullPiece())
-            continue;
-
-        Piece *piece = square->getPiece();
-        for (int j = 0; j < 32; j++)
-        {
-            if (allSprites[j]->inUse)
-                continue;
-
-            SpriteData *data = allSprites[j];
-            int color = Piece::getPieceColor(data->pieceType);
-            int type = Piece::getPieceType(data->pieceType);
-
-            if (color == piece->getPieceColor() && type == piece->getPieceType())
-            {
-                sf::Vector2f pos(file * SQUARESIZE, rank * SQUARESIZE);
-                piece->setPieceSprite(data->sprite, pos);
-                allSprites[j]->inUse = true;
-                allSprites[j]->piecePtr = piece;
-                break;
-            }
-        }
-    }
-}
 
 void GameEngine::loadSprites()
 {
-    // white piece sprites
-    for (int i = 0; i < 8; i++)
-    {
-        sf::Sprite *pawnSprite = new sf::Sprite(*GameEngine::textures["wp"]);
-        allSprites[i] = new SpriteData(pawnSprite, Piece::PAWN | Piece::WHITE);
-    }
-    allSprites[8] = new SpriteData(new sf::Sprite(*GameEngine::textures["wr"]), Piece::ROOK | Piece::WHITE);
-    allSprites[9] = new SpriteData(new sf::Sprite(*GameEngine::textures["wr"]), Piece::ROOK | Piece::WHITE);
-    allSprites[10] = new SpriteData(new sf::Sprite(*GameEngine::textures["wn"]), Piece::KNIGHT | Piece::WHITE);
-    allSprites[11] = new SpriteData(new sf::Sprite(*GameEngine::textures["wn"]), Piece::KNIGHT | Piece::WHITE);
-    allSprites[12] = new SpriteData(new sf::Sprite(*GameEngine::textures["wb"]), Piece::BISHOP | Piece::WHITE);
-    allSprites[13] = new SpriteData(new sf::Sprite(*GameEngine::textures["wb"]), Piece::BISHOP | Piece::WHITE);
-    allSprites[14] = new SpriteData(new sf::Sprite(*GameEngine::textures["wk"]), Piece::KING | Piece::WHITE);
-    allSprites[15] = new SpriteData(new sf::Sprite(*GameEngine::textures["wq"]), Piece::QUEEN | Piece::WHITE);
 
-    // black piece sprites
-    for (int i = 16; i < 24; i++)
-    {
-        sf::Sprite *pawnSprite = new sf::Sprite(*GameEngine::textures["bp"]);
-        allSprites[i] = new SpriteData(pawnSprite, Piece::PAWN | Piece::BLACK);
-    }
-    allSprites[24] = new SpriteData(new sf::Sprite(*GameEngine::textures["br"]), Piece::ROOK | Piece::BLACK);
-    allSprites[25] = new SpriteData(new sf::Sprite(*GameEngine::textures["br"]), Piece::ROOK | Piece::BLACK);
-    allSprites[26] = new SpriteData(new sf::Sprite(*GameEngine::textures["bn"]), Piece::KNIGHT | Piece::BLACK);
-    allSprites[27] = new SpriteData(new sf::Sprite(*GameEngine::textures["bn"]), Piece::KNIGHT | Piece::BLACK);
-    allSprites[28] = new SpriteData(new sf::Sprite(*GameEngine::textures["bb"]), Piece::BISHOP | Piece::BLACK);
-    allSprites[29] = new SpriteData(new sf::Sprite(*GameEngine::textures["bb"]), Piece::BISHOP | Piece::BLACK);
-    allSprites[30] = new SpriteData(new sf::Sprite(*GameEngine::textures["bk"]), Piece::KING | Piece::BLACK);
-    allSprites[31] = new SpriteData(new sf::Sprite(*GameEngine::textures["bq"]), Piece::QUEEN | Piece::BLACK);
+    sf::Sprite w_pawn = sf::Sprite(*GameEngine::textures["wp"]);
+    sf::Sprite w_rook = sf::Sprite(*GameEngine::textures["wr"]);
+    sf::Sprite w_knight = sf::Sprite(*GameEngine::textures["wn"]);
+    sf::Sprite w_bishop = sf::Sprite(*GameEngine::textures["wb"]);
+    sf::Sprite w_queen = sf::Sprite(*GameEngine::textures["wq"]);
+    sf::Sprite w_king = sf::Sprite(*GameEngine::textures["wk"]);
+
+    pieceSprites[Piece::PAWN | Piece::WHITE] = w_pawn;
+    pieceSprites[Piece::ROOK | Piece::WHITE] = w_rook;
+    pieceSprites[Piece::KNIGHT | Piece::WHITE] = w_knight;
+    pieceSprites[Piece::BISHOP | Piece::WHITE] = w_bishop;
+    pieceSprites[Piece::QUEEN | Piece::WHITE] = w_queen;
+    pieceSprites[Piece::KING | Piece::WHITE] = w_king;
+
+    sf::Sprite b_pawn = sf::Sprite(*GameEngine::textures["bp"]);
+    sf::Sprite b_rook = sf::Sprite(*GameEngine::textures["br"]);
+    sf::Sprite b_knight = sf::Sprite(*GameEngine::textures["bn"]);
+    sf::Sprite b_bishop = sf::Sprite(*GameEngine::textures["bb"]);
+    sf::Sprite b_queen = sf::Sprite(*GameEngine::textures["bq"]);
+    sf::Sprite b_king = sf::Sprite(*GameEngine::textures["bk"]);
+
+    pieceSprites[Piece::PAWN | Piece::BLACK] = b_pawn;
+    pieceSprites[Piece::ROOK | Piece::BLACK] = b_rook;
+    pieceSprites[Piece::KNIGHT | Piece::BLACK] = b_knight;
+    pieceSprites[Piece::BISHOP | Piece::BLACK] = b_bishop;
+    pieceSprites[Piece::QUEEN | Piece::BLACK] = b_queen;
+    pieceSprites[Piece::KING | Piece::BLACK] = b_king;
 }
 
 void GameEngine::loadTextures()

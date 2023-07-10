@@ -22,35 +22,9 @@ Piece::Piece(int pieceType, int piecePosition)
     currentPosition = piecePosition;
     this->pieceType = pieceType;
 }
-void Piece::setPieceSprite(sf::Sprite *other, sf::Vector2f pos)
-{
-    if(this->sprite != nullptr){
-        previousSprite = sprite;
-    }
-    sprite = other;
-    spritePosition = pos;
-    sprite->setPosition(pos);
-    scale = GameEngine::SQUARESIZE / sprite->getLocalBounds().height;
-    sprite->setScale(scale, scale);
-}
 
-void Piece::setPieceCoordinates(float x, float y)
-{
-    spritePosition = sf::Vector2f(x, y);
-    sprite->setPosition(spritePosition);
-}
-void Piece::drawPiece(sf::RenderWindow *window)
-{
-    window->draw(*sprite);
-}
-
-void Piece::setPiecePosition(int positionOnBoard, bool overridePosition /*=false*/)
+void Piece::setPiecePosition(int positionOnBoard)
 {
     currentPosition = positionOnBoard;
-    int rank = currentPosition / 8;
-    int file = currentPosition % 8;
-    if (overridePosition)
-    {
-        this->setPieceCoordinates(GameEngine::SQUARESIZE * file, GameEngine::SQUARESIZE * rank);
-    }
+
 }
