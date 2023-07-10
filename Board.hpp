@@ -22,7 +22,7 @@ struct Move
         target = t;
         isEnPassant = possiblePassant;
         isCastle = castle;
-        pieceType = pieceType;
+        this->pieceType = pieceType;
 
         int targetRank = t / 8;
         if ((Piece::getPieceType(pieceType) == Piece::PAWN) && (targetRank == 0 || targetRank == 7))

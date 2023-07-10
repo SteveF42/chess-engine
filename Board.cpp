@@ -567,7 +567,6 @@ void Board::makeMove(Move move)
 
 void Board::updateCastlingRights(const Move &move)
 {
-
     if (Piece::getPieceType(move.pieceType) == Piece::KING && Piece::getPieceColor(move.pieceType) == Piece::BLACK)
     {
         this->blackCastleKingSide = false;
