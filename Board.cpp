@@ -463,14 +463,15 @@ void Board::makeMove(Move move)
     else
     {
         this->possibleEnPassant = 999;
+        move.possibleEnPassant = 999;
     }
 
     // capture
     if (!endSquare->hasNullPiece())
     {
         Piece *capturedPiece = endSquare->getPiece();
-        capturedPieces.push(capturedPiece);
         move.capture = true;
+        move.capturedPiece = capturedPiece;
 
         if (capturedPiece->getPieceType() == Piece::ROOK)
         {
@@ -507,7 +508,7 @@ void Board::makeMove(Move move)
     {
         int offset = move.start - move.target == 9 ? -1 : 1;
         Piece *pawn = board[move.start + offset]->getPiece();
-        capturedPieces.push(pawn);
+        move.capturedPiece = pawn;
         board[move.start + offset]->setPiece(nullptr);
     }
     // pawn promotion
@@ -543,12 +544,24 @@ void Board::makeMove(Move move)
         }
     }
 
+    CastlingRights oldRights;
+    oldRights.blackCastleKingSide = this->blackCastleKingSide;
+    oldRights.blackCastleQueenSide = this->blackCastleQueenSide;
+    oldRights.whiteCastleKingSide = this->whiteCastleKingSide;
+    oldRights.whiteCastleQueenSide = this->whiteCastleQueenSide;
+    std::cout << "WhiteCastleKing: " << whiteCastleKingSide << '\n';
+    std::cout << "WhiteCastleQueen: " << whiteCastleQueenSide << '\n';
+    std::cout << "BlackCastleKing: " << blackCastleKingSide << '\n';
+    std::cout << "BlackCastleKing: " << blackCastleQueenSide << '\n';
+    castlingHistory.push(oldRights);
     updateCastlingRights(move);
 
     piece->setPiecePosition(move.target);
     endSquare->setPiece(piece);
     startSquare->setPiece(nullptr);
     moveHistory.push(move);
+
+    movesetHistory.push(moveset);
     whiteToMove = !whiteToMove;
 }
 
@@ -595,46 +608,68 @@ void Board::updateCastlingRights(const Move &move)
 
 void Board::unmakeMove()
 {
-    Move pastMove = moveHistory.top();
+    if (moveHistory.empty())
+        return;
+    // call a move swap function or something
+    Move move = moveHistory.top();
     moveHistory.pop();
+    Square *target = board[move.target];
+    Square *start = board[move.start];
+    Piece *movedPiece = target->getPiece();
 
-    int start = pastMove.start;
-    int target = pastMove.target;
-    // undo everything lmao
-    Square *startSquare = board[start];
-    Square *endSquare = board[target];
-    Piece *piece = board[target]->getPiece();
-    int startRank = start / 8;
-    int endRank = target / 8;
+    // moves piece back to original square
+    movedPiece->setPiecePosition(move.start, true);
+    start->setPiece(movedPiece);
+    target->setPiece(nullptr);
 
-    // puts piece back
-    startSquare->setPiece(piece);
-    piece->setPiecePosition(start);
-
-    // resets the enPassantFlag if necessary
-    possibleEnPassant = pastMove.possibleEnPassant;
-
-    // places captured piece back
-    if (pastMove.isEnPassant)
+    // capture
+    if (move.capture)
     {
-        int offset = start - target == 9 ? -1 : 1;
-        Piece *pawn = capturedPieces.top();
-        capturedPieces.pop();
-        board[start + offset]->setPiece(pawn);
-        pawn->setPiecePosition(start + offset);
+        Piece *capturedPiece = move.capturedPiece;
+        target->setPiece(capturedPiece);
     }
-    else if (pastMove.capture)
+    // en passant move
+    if (move.isEnPassant)
     {
-        Piece *returnedPiece = capturedPieces.top();
-        capturedPieces.pop();
-        endSquare->setPiece(returnedPiece);
-        returnedPiece->setPiecePosition(target);
+        possibleEnPassant = move.possibleEnPassant;
+        int offset = move.start - move.target == 9 ? -1 : 1;
+        board[move.start + offset]->setPiece(move.capturedPiece);
     }
+    // pawn promotion
+    if (move.pawnPromotion)
+    {
+        movedPiece->setPieceType(Piece::PAWN | movedPiece->getPieceColor());
+        movedPiece->revertSprite();
+    }
+    // castle move
+    if (move.isCastle)
+    {
+        int startFile = move.start % 8;
+        int endFile = move.target % 8;
+        if (endFile - startFile == 2) // kingside castle
+        {
+            Piece *rook = board[move.target - 1]->getPiece();
+            rook->setPiecePosition(move.target + 1, true);
+            board[move.target + 1]->setPiece(rook);
+            board[move.target - 1]->setPiece(nullptr);
+        }
+        else // queen side castle
+        {
+            Piece *rook = board[move.target + 1]->getPiece();
+            rook->setPiecePosition(move.target - 2, true);
+            board[move.target - 2]->setPiece(rook);
+            board[move.target + 1]->setPiece(nullptr);
+        }
+    }
+    CastlingRights castleHistory = castlingHistory.top();
+    this->blackCastleKingSide = castleHistory.blackCastleKingSide;
+    this->blackCastleQueenSide = castleHistory.blackCastleQueenSide;
+    this->whiteCastleKingSide = castleHistory.whiteCastleKingSide;
+    this->whiteCastleQueenSide = castleHistory.whiteCastleQueenSide;
+    castlingHistory.pop();
 
-    // undo castle move
-    if (pastMove.isCastle)
-    {
-    }
+    this->moveset = movesetHistory.top();
+    movesetHistory.pop();
 
     whiteToMove = !whiteToMove;
 }

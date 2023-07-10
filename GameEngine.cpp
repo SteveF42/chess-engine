@@ -36,10 +36,10 @@ void GameEngine::update()
                 placePiece("drop");
             }
         }
-        // else if (event.type == sf::Event::KeyPressed && event.KeyPressed == sf::Keyboard::A)
-        // {
-        //     this->gameBoard->unmakeMove();
-        // }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && event.type == sf::Event::KeyPressed)
+        {
+            this->gameBoard->unmakeMove();
+        }
     }
 
     window->setSize(sf::Vector2u(1000.f, 1000.f));

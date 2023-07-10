@@ -14,7 +14,8 @@ struct Move
     bool capture = false;
     bool isEnPassant;
     bool isCastle;
-    bool pawnPromotion = false;
+    bool pawnPromotion;
+    Piece *capturedPiece = nullptr;
     Move(int s, int t, int pieceType, bool possiblePassant = false, bool castle = false)
     {
         start = s;
@@ -22,8 +23,12 @@ struct Move
         isEnPassant = possiblePassant;
         isCastle = castle;
         pieceType = pieceType;
-        if(Piece::getPieceType(pieceType == Piece::PAWN) && (t == 0 || t == 7))
+
+        int targetRank = t / 8;
+        if ((Piece::getPieceType(pieceType) == Piece::PAWN) && (targetRank == 0 || targetRank == 7))
             pawnPromotion = true;
+        else
+            pawnPromotion = false;
     }
     Move() {}
 };
@@ -45,6 +50,14 @@ struct CheckOrPin
     }
 };
 
+struct CastlingRights
+{
+    bool blackCastleKingSide = false;
+    bool whiteCastleKingSide = false;
+    bool blackCastleQueenSide = false;
+    bool whiteCastleQueenSide = false;
+};
+
 class Board
 {
 private:
@@ -59,6 +72,8 @@ private:
     int possibleEnPassant;
 
     std::vector<std::vector<Move>> moveset;
+    std::stack<std::vector<std::vector<Move>>> movesetHistory;
+
     Square *board[64];
     bool whiteToMove = true;
     bool blackCastleKingSide = false;
@@ -68,6 +83,7 @@ private:
 
     std::stack<Piece *> capturedPieces;
     std::stack<Move> moveHistory;
+    std::stack<CastlingRights> castlingHistory;
     Piece *blackKing;
     Piece *whiteKing;
 
