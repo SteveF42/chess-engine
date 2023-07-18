@@ -49,9 +49,9 @@ public:
     static constexpr float SQUARESIZE = 25.f;
     static std::map<std::string, sf::Texture *> textures;
 
-    GameEngine()
+    GameEngine(std::string fenString)
     {
-        gameBoard = ReadFen::readFenString(ReadFen::startingString);
+        gameBoard = ReadFen::readFenString(fenString);
         loadTextures();
         loadSprites();
         gameBoard->generateMovesInCurrentPosition();

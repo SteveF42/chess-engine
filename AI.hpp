@@ -7,7 +7,7 @@ class AI
 {
 
 public:
-    Move miniMax(Board* board);
+    static  Move generateMove(Board board);
 };
 
 #endif
