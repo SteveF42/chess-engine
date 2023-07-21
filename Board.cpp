@@ -44,7 +44,7 @@ void Board::generateMovesInCurrentPosition()
     this->checks = checks;
     this->checkFlag = inCheck;
 
-    std::vector<std::vector<Move>> moves;
+    std::map<int, std::vector<Move>> moves;
     Piece *kingPiece = whiteToMove ? whiteKing : blackKing;
 
     if (inCheck)
@@ -102,7 +102,6 @@ void Board::generateMovesInCurrentPosition()
         else // double check king has to move
         {
 
-            moves = std::vector<std::vector<Move>>(kingPiece->getPiecePosition());
             auto kingMoves = getKingMoves(kingPiece);
             moves[kingPiece->getPiecePosition()] = kingMoves;
         }
@@ -116,10 +115,11 @@ void Board::generateMovesInCurrentPosition()
     this->moveset = moves;
 }
 
-std::vector<std::vector<Move>> Board::pieceAvailableMoves()
+std::map<int, std::vector<Move>> Board::pieceAvailableMoves()
 {
 
-    std::vector<std::vector<Move>> positionMoves(64);
+    std::map<int, std::vector<Move>> positionMoves;
+    int colorToMove = whiteToMove ? Piece::WHITE : Piece::BLACK;
 
     for (int i = 0; i < 64; i++)
     {
@@ -127,6 +127,9 @@ std::vector<std::vector<Move>> Board::pieceAvailableMoves()
             continue;
 
         Piece *piece = board[i]->getPiece();
+        if (piece->getPieceColor() != colorToMove)
+            continue;
+
         std::vector<Move> pieceMoves;
 
         int pieceType = piece->getPieceType();
@@ -784,18 +787,91 @@ void Board::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<Che
     }
 }
 
-bool Board::squareUnderAttack(int square, int pieceColor)
+bool Board::squareUnderAttack(int square, int allyColor)
 {
 
-    for (auto piece : moveset)
+    for (int i = 0; i < 8; i++)
     {
-        for (auto move : piece)
+        CheckOrPin possiblePin;
+        bool pinExists = false;
+        for (int j = 0; j < numSquaresToEdge[square][i]; j++)
         {
-            Piece *other = board[move.start]->getPiece();
-            if (move.target == square && other->getPieceColor() != pieceColor)
+            int target = square + slidingMovesOffsets[i] * (j + 1);
+            if (board[target]->hasNullPiece())
+                continue;
+
+            Piece *curr = board[target]->getPiece();
+            if (curr->getPieceColor() == allyColor && curr->getPieceType() != Piece::KING)
             {
-                return true;
+                if (!pinExists)
+                {
+                    possiblePin.position = target;
+                    possiblePin.direction = slidingMovesOffsets[i];
+                    pinExists = true;
+                }
+                else
+                {
+                    possiblePin.position = -1111;
+                    possiblePin.direction = -1111;
+                    pinExists = false;
+                    break; // second ally piece so no pin or check is possible
+                }
             }
+            else if (curr->getPieceColor() != allyColor)
+            {
+                // orthogonal away from king is rook
+                // diagnol away from king is bishop
+                // 1 square away from king is pawn
+                // any square away can be a queen
+                // any direction 1 square away is king
+
+                int pieceType = curr->getPieceType();
+                if ((pieceType == Piece::ROOK && i <= 3) || (pieceType == Piece::BISHOP && i >= 4) || (j == 0 && pieceType == Piece::PAWN && ((allyColor != Piece::WHITE and (i == 4 || i == 6)) || (allyColor != Piece::BLACK and (i == 5 || i == 7)))) || pieceType == Piece::QUEEN || (j == 0 && pieceType == Piece::KING))
+                {
+
+                    if (!pinExists) // piece is in check
+                    {
+                        return true;
+                        checks.push_back(CheckOrPin(target, slidingMovesOffsets[i]));
+                        break;
+                    }
+                    else // piece is pinned
+                    {
+                        pins.push_back(possiblePin);
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    // check knight moves on king
+    // const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
+    int rank = square / 8;
+    int file = square % 8;
+    for (int i = 0; i < 8; i++)
+    {
+        int target = square + knightOffset[i];
+        if (target >= 64 || target < 0)
+            continue;
+        if (board[target]->hasNullPiece())
+            continue;
+
+        int knightRank = target / 8;
+        int knightFile = target % 8;
+
+        // makes sure knight doesnt wrap around the edge of the board
+        int maxJumpCoord = std::max(std::abs(file - knightFile), std::abs(rank - knightRank));
+        if (maxJumpCoord != 2)
+            continue;
+
+        Piece *endPiece = board[target]->getPiece();
+
+        if (endPiece->getPieceColor() != allyColor && endPiece->getPieceType() == Piece::KNIGHT)
+        {
+            return true;
+            checks.push_back(CheckOrPin(target, knightOffset[i]));
         }
     }
 

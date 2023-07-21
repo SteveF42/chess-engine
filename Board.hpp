@@ -15,6 +15,7 @@ struct Move
     bool isEnPassant;
     bool isCastle;
     bool pawnPromotion;
+    int promotionPieceType;
     Piece *capturedPiece = nullptr;
     Move(int s, int t, int pieceType, bool possiblePassant = false, bool castle = false)
     {
@@ -71,8 +72,8 @@ private:
     std::vector<CheckOrPin> checks;
     int possibleEnPassant;
 
-    std::vector<std::vector<Move>> moveset;
-    std::stack<std::vector<std::vector<Move>>> movesetHistory;
+    std::map<int,std::vector<Move>> moveset;
+    std::stack<std::map<int,std::vector<Move>>> movesetHistory;
 
     Square *board[64];
     bool whiteToMove = true;
@@ -94,9 +95,8 @@ private:
     std::vector<Move> getPawnMoves(Piece *other);
     std::vector<Move> getKnightMoves(Piece *other);
     std::vector<Move> getKingMoves(Piece *other);
-    std::vector<std::vector<Move>> pieceAvailableMoves();
+    std::map<int,std::vector<Move>> pieceAvailableMoves();
     void boardEdgeData();
-    void makeMove(Move move);
     void checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<CheckOrPin> &checks, bool &inCheck);
     void updateCastlingRights(const Move &move);
     void getCastleMoves(std::vector<Move> &validMoves, Piece *kingPiece);
@@ -105,8 +105,10 @@ private:
 public:
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     void generateMovesInCurrentPosition();
+    std::map<int,std::vector<Move>> getMoves() { return moveset; }
     void promotePawn(int pieceLocation, int pieceType);
     void unmakeMove();
+    void makeMove(Move move);
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);
 

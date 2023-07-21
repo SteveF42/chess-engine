@@ -1,5 +1,6 @@
-#include "GameEngine.hpp"
 #include <iostream>
+#include "GameEngine.hpp"
+#include "AI.hpp"
 
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
 // this is very very bad, I really shouldn't be doing it this way
@@ -15,7 +16,7 @@ void GameEngine::update()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
+        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left && gameBoard->getWhiteToMove())
         {
             placed = false;
             if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
@@ -29,7 +30,7 @@ void GameEngine::update()
             }
             // sets a square to be highlighted alongside a piece moves if that's the case
         }
-        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left && gameBoard->getWhiteToMove())
         {
             if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
             {
@@ -48,7 +49,15 @@ void GameEngine::update()
     this->drawBoard();
     this->drawHighLightedSquare();
     this->drawPieces();
-    this->movePiece();
+    if (gameBoard->getWhiteToMove())
+    {
+        this->movePiece();
+    }else{
+        AI::minimax(*gameBoard);
+        Move bestMove = AI::bestMove;
+        gameBoard->makeMove(bestMove);
+        gameBoard->generateMovesInCurrentPosition();
+    }
 
     window->display();
 }
