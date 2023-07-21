@@ -31,7 +31,10 @@ struct Move
         else
             pawnPromotion = false;
     }
-    Move() {}
+    Move() {
+        start = -1;
+        target = -1;
+    }
 };
 
 struct CheckOrPin
@@ -111,6 +114,7 @@ public:
     void makeMove(Move move);
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);
+    bool gameOver = false;
 
     Board()
     {

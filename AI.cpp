@@ -2,7 +2,7 @@
 
 Move AI::bestMove;
 
-int AI::minimax(Board position, int depth /*= 4*/, int alpha /*=0*/, int beta /*=0*/)
+int AI::minimax(Board position, int depth /*= MAXDEPTH*/, int alpha /*=0*/, int beta /*=0*/)
 {
     if (depth == 0)
         return generateEval(position);
@@ -11,7 +11,7 @@ int AI::minimax(Board position, int depth /*= 4*/, int alpha /*=0*/, int beta /*
     auto moveTable = position.getMoves();
     auto moves = orderMoves(moveTable, position);
 
-    if (moveTable.empty())
+    if (moves.empty())
     {
         // being in check is bad and if theres no moves then a stalemate has occurred
         if (position.getCheck())
@@ -19,26 +19,42 @@ int AI::minimax(Board position, int depth /*= 4*/, int alpha /*=0*/, int beta /*
         else
             return 0;
     }
+    int bestEval = -INFINITY;
 
-    for (const auto &[key, piece] : moveTable)
+    for (const auto &move : moves)
     {
-        for (const auto &move : piece)
+        position.makeMove(move);
+        int eval = -minimax(position, depth - 1, -beta, -alpha);
+        if (eval > bestEval)
         {
-            position.makeMove(move);
-            int eval = -minimax(position, depth - 1, -beta, -alpha);
-            position.unmakeMove();
-            if (eval >= beta)
-            {
+            bestEval = eval;
+            if (depth == MAXDEPTH)
                 bestMove = move;
-                return beta;
-            }
-            alpha = std::max(alpha, eval);
         }
+        position.unmakeMove();
+        // opponent had a better move so don't use it
+        if (eval >= beta)
+        {
+            return beta;
+        }
+        alpha = std::max(alpha, eval);
     }
 
     return alpha;
 }
 
+int AI::searchCaptures(Board position, int alpha, int beta)
+{
+    int eval = generateEval(position);
+
+    if (eval >= beta)
+        return beta;
+
+    alpha = std::max(alpha, eval);
+
+    // generate only capture moves
+    // order moves
+}
 
 int AI::generateEval(Board position)
 {
@@ -108,9 +124,12 @@ int AI::generateEval(Board position)
 std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> moveTable, Board &position)
 {
     std::vector<Move> moves;
-    for (const auto &[key, piece] : moveTable)
+    for (const auto &[key, moveList] : moveTable)
     {
-        for (const auto &move : piece)
+        if (moveList.empty())
+            continue;
+
+        for (const auto &move : moveList)
         {
             int moveScoreGuess = 0;
             int movePieceType = position.getBoard()[move.start]->getPiece()->getPieceType();

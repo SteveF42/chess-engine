@@ -75,27 +75,27 @@ void Board::generateMovesInCurrentPosition()
                         break;
                 }
             }
-
-            for (int i = 0; i < moves.size(); i++)
+            // redo this function to iterate through the map properly
+            for (const auto &[key, val] : moves)
             {
-                if (moves[i].empty())
+                if (val.empty())
                     continue;
 
-                int pieceLocation = moves[i][0].start;
+                int pieceLocation = val[0].start;
                 Piece *piece = board[pieceLocation]->getPiece();
 
                 if (piece->getPieceType() != Piece::KING) // the king isn't moving so another piece has to block or capture
                 {
                     std::vector<Move> allowedMoves;
-                    for (int j = 0; j < moves[i].size(); j++)
+                    for (int j = 0; j < val.size(); j++)
                     {
-                        Move move = moves[i][j];
+                        Move move = val[j];
                         if (searchVector(validSquares, move.target)) // if the target square is not in the valid moves square
                         {
-                            allowedMoves.push_back(moves[i][j]);
+                            allowedMoves.push_back(val[j]);
                         }
                     }
-                    moves[i] = allowedMoves;
+                    moves[key] = allowedMoves;
                 }
             }
         }

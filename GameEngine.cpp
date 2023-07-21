@@ -16,7 +16,10 @@ void GameEngine::update()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left && gameBoard->getWhiteToMove())
+        if (!gameBoard->getWhiteToMove())
+            continue;
+
+        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
             placed = false;
             if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
@@ -30,7 +33,7 @@ void GameEngine::update()
             }
             // sets a square to be highlighted alongside a piece moves if that's the case
         }
-        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left && gameBoard->getWhiteToMove())
+        else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
         {
             if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
             {
@@ -42,6 +45,8 @@ void GameEngine::update()
             this->gameBoard->unmakeMove();
         }
     }
+    if (gameBoard->gameOver)
+        return;
 
     window->setSize(sf::Vector2u(1000.f, 1000.f));
     window->clear();
@@ -52,11 +57,24 @@ void GameEngine::update()
     if (gameBoard->getWhiteToMove())
     {
         this->movePiece();
-    }else{
-        AI::minimax(*gameBoard);
-        Move bestMove = AI::bestMove;
-        gameBoard->makeMove(bestMove);
-        gameBoard->generateMovesInCurrentPosition();
+    }
+    // this->movePiece();
+
+    else
+    {
+        // since AI is a static class I have to manually initialize the bestmove here which is bad
+        AI::bestMove = Move();
+        int eval = AI::minimax(*gameBoard);
+        Move &bestMove = AI::bestMove;
+        if (bestMove.start == bestMove.target)
+        {
+            gameBoard->gameOver = true;
+        }
+        else
+        {
+            gameBoard->makeMove(bestMove);
+            gameBoard->generateMovesInCurrentPosition();
+        }
     }
 
     window->display();
