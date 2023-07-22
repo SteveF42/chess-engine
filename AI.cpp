@@ -2,7 +2,7 @@
 
 Move AI::bestMove;
 
-int AI::minimax(Board position, int depth /*= MAXDEPTH*/, int alpha /*=0*/, int beta /*=0*/)
+int AI::minimax(Board position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
         return generateEval(position);
@@ -52,8 +52,20 @@ int AI::searchCaptures(Board position, int alpha, int beta)
 
     alpha = std::max(alpha, eval);
 
-    // generate only capture moves
-    // order moves
+    auto captureMoves = generateCaptures(position);
+    orderMoves(captureMoves, position);
+
+    for (auto &capture : captureMoves)
+    {
+        position.makeMove(capture);
+        eval = -searchCaptures(position, -beta, -alpha);
+        position.unmakeMove();
+
+        if (eval >= beta)
+            return beta;
+        alpha = std::max(alpha, eval);
+    }
+    return alpha;
 }
 
 int AI::generateEval(Board position)
@@ -124,6 +136,7 @@ int AI::generateEval(Board position)
 std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> moveTable, Board &position)
 {
     std::vector<Move> moves;
+    std::vector<int> scores;
     for (const auto &[key, moveList] : moveTable)
     {
         if (moveList.empty())
@@ -145,9 +158,78 @@ std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> moveTable, Boa
             }
 
             moves.push_back(move);
+            scores.push_back(moveScoreGuess);
         }
     }
+    sortMoves(moves, scores);
     return moves;
+}
+
+std::vector<Move> AI::orderMoves(std::vector<Move> moveList, Board &position)
+{
+    std::vector<Move> moves;
+    std::vector<int> scores;
+
+    for (const auto &move : moveList)
+    {
+        int moveScoreGuess = 0;
+        int movePieceType = position.getBoard()[move.start]->getPiece()->getPieceType();
+        if (!position.getBoard()[move.target]->hasNullPiece())
+        {
+            int targetPiece = position.getBoard()[move.target]->getPiece()->getPieceType();
+            moveScoreGuess += 10 * getPieceValue(targetPiece) - getPieceValue(movePieceType);
+        }
+
+        if (move.pawnPromotion)
+        {
+            moveScoreGuess += 10;
+        }
+
+        moves.push_back(move);
+        scores.push_back(moveScoreGuess);
+    }
+    sortMoves(moves, scores);
+    return moves;
+}
+
+std::vector<Move> AI::generateCaptures(Board &position)
+{
+    position.generateMovesInCurrentPosition();
+    auto moves = position.getMoves();
+    std::vector<Move> validCaptures;
+    Square **board = position.getBoard();
+
+    for (auto const &[key, moves] : moves)
+    {
+        for (auto move : moves)
+        {
+            if (!board[move.target]->hasNullPiece())
+            {
+                validCaptures.push_back(move);
+            }
+        }
+    }
+    return validCaptures;
+}
+
+void AI::sortMoves(std::vector<Move> &moves, std::vector<int> &weights)
+{
+    for (int i = 1; i < weights.size(); i++)
+    {
+        int key = weights[i];
+        int j = i - 1;
+
+        while (j >= 0 && weights[i] > weights[i])
+        {
+            // move the move
+            moves[j + 1] = moves[j];
+            // move the weight
+            weights[j + 1] = weights[j];
+            j--;
+        }
+        moves[j + 1] = moves[i];
+        weights[j + 1] = weights[i];
+    }
 }
 
 int AI::getPieceValue(int piece)

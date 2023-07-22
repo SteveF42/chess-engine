@@ -145,14 +145,13 @@ std::map<int, std::vector<Move>> Board::pieceAvailableMoves()
         {
             pieceMoves = getPawnMoves(piece);
         }
+        else if (pieceType == Piece::KING)
+        {
+            pieceMoves = getKingMoves(piece);
+        }
         positionMoves[i] = pieceMoves;
     }
     this->moveset = positionMoves;
-    auto whiteKingMoves = getKingMoves(whiteKing);
-    auto blackKingMoves = getKingMoves(blackKing);
-    moveset[whiteKing->getPiecePosition()] = whiteKingMoves;
-    moveset[blackKing->getPiecePosition()] = blackKingMoves;
-
     return moveset;
 }
 
