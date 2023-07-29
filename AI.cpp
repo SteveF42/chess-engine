@@ -12,10 +12,12 @@ long AI::moveGenerationTest(int depth, Board &position)
     auto moves = position.moveGeneration.getMoves();
     long numPositions = 0;
 
-    for(auto &[key,val] : moves){
-        for(auto &move : val){
+    for (auto &[key, val] : moves)
+    {
+        for (auto &move : val)
+        {
             position.makeMove(move);
-            numPositions += moveGenerationTest(depth-1,position);
+            numPositions += moveGenerationTest(depth - 1, position);
             position.unmakeMove();
         }
     }
@@ -25,7 +27,7 @@ long AI::moveGenerationTest(int depth, Board &position)
 int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
-        return generateEval(position);
+        return searchCaptures(position, alpha, beta);
 
     position.moveGeneration.generateMovesInCurrentPosition();
     auto moveTable = position.moveGeneration.getMoves();
@@ -91,64 +93,29 @@ int AI::searchCaptures(Board &position, int alpha, int beta)
 
 int AI::generateEval(Board position)
 {
-    Square **board = position.getBoard();
+    std::vector<Piece *> *whitePieces = position.moveGeneration.pieceList.getPieces(true);
+    std::vector<Piece *> *blackPieces = position.moveGeneration.pieceList.getPieces(false);
 
     int blackMaterial = 0;
     int whiteMaterial = 0;
-    for (int i = 0; i < 64; i++)
+    //loops through white pieces
+    for (int i = 0; i < PieceList::arrSize; i++)
     {
-        if (board[i]->hasNullPiece())
-            continue;
-        Piece *piece = board[i]->getPiece();
-
-        if (piece->getPieceColor() == Piece::WHITE)
+        for (int j = 0; j < whitePieces[i].size(); j++)
         {
-            switch (piece->getPieceType())
-            {
-            case Piece::PAWN:
-                whiteMaterial += pawnValue;
-                break;
-            case Piece::KNIGHT:
-                whiteMaterial += knightValue;
-                break;
-            case Piece::BISHOP:
-                whiteMaterial += bishopValue;
-                break;
-            case Piece::ROOK:
-                whiteMaterial += rookValue;
-                break;
-            case Piece::QUEEN:
-                whiteMaterial += queenValue;
-                break;
-            default:
-                break;
-            }
-        }
-        else
-        {
-            switch (piece->getPieceType())
-            {
-            case Piece::PAWN:
-                blackMaterial += pawnValue;
-                break;
-            case Piece::KNIGHT:
-                blackMaterial += knightValue;
-                break;
-            case Piece::BISHOP:
-                blackMaterial += bishopValue;
-                break;
-            case Piece::ROOK:
-                blackMaterial += rookValue;
-                break;
-            case Piece::QUEEN:
-                blackMaterial += queenValue;
-                break;
-            default:
-                break;
-            }
+            Piece *piece = whitePieces[i][j];
+            whiteMaterial += getPieceValue(piece->getPieceType());
         }
     }
-
+    //loops through black pieces
+    for (int i = 0; i < PieceList::arrSize; i++)
+    {
+        for (int j = 0; j < blackPieces[i].size(); j++)
+        {
+            Piece *piece = blackPieces[i][j];
+            whiteMaterial += getPieceValue(piece->getPieceType());
+        }
+    }
     int eval = whiteMaterial - blackMaterial;
     int side = position.getWhiteToMove() ? 1 : -1;
     return eval * side;

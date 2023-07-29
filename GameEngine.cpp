@@ -16,8 +16,8 @@ void GameEngine::update()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        // if (!gameBoard->getWhiteToMove())
-        //     continue;
+        if (!gameBoard->getWhiteToMove())
+            continue;
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
@@ -54,32 +54,32 @@ void GameEngine::update()
     this->drawBoard();
     this->drawHighLightedSquare();
     this->drawPieces();
-    // if (gameBoard->getWhiteToMove())
-    // {
-    //     this->movePiece();
-    // }
-    this->movePiece();
+    if (gameBoard->getWhiteToMove())
+    {
+        this->movePiece();
+        window->display();
+    }
+    // this->movePiece();
 
-    // else
-    // {
-    //     // since AI is a static class I have to manually initialize the bestmove here which is bad
-    //     AI::bestMove = Move();
-    //     AI::positions = 0;
-    //     int eval = AI::minimax(*gameBoard);
-    //     std::cout << "Positions evaluated: " << AI::positions << '\n';
-    //     Move &bestMove = AI::bestMove;
-    //     if (bestMove.start == bestMove.target)
-    //     {
-    //         gameBoard->gameOver = true;
-    //     }
-    //     else
-    //     {
-    //         gameBoard->makeMove(bestMove);
-    //         gameBoard->generateMovesInCurrentPosition();
-    //     }
-    // }
-
-    window->display();
+    else
+    {
+        window->display();
+        // since AI is a static class I have to manually initialize the bestmove here which is bad
+        AI::bestMove = Move();
+        AI::positions = 0;
+        int eval = AI::minimax(*gameBoard);
+        std::cout << "Positions evaluated: " << AI::positions << '\n';
+        Move &bestMove = AI::bestMove;
+        if (bestMove.start == bestMove.target)
+        {
+            gameBoard->gameOver = true;
+        }
+        else
+        {
+            gameBoard->makeMove(bestMove);
+            gameBoard->moveGeneration.generateMovesInCurrentPosition();
+        }
+    }
 }
 
 void GameEngine::placePiece(std::string s)
