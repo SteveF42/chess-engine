@@ -6,7 +6,9 @@ void PieceList::addPiece(Piece *piece)
     int colorIndex = piece->getPieceColor() == Piece::WHITE ? whiteIndex : blackIndex;
     int pieceIndex = getPieceIndex(piece->getPieceType());
 
-    pieces[colorIndex][pieceIndex].push_back(piece);
+    //piece is not a king since king is being tracked individually
+    if(pieceIndex != -1)
+        pieces[colorIndex][pieceIndex].push_back(piece);
 }
 
 void PieceList::removePiece(Piece *piece)
@@ -40,7 +42,7 @@ int PieceList::getPieceIndex(int pieceType)
     case Piece::PAWN:
         return pawnIndex;
     case Piece::ROOK:
-        return pawnIndex;
+        return rookIndex;
     case Piece::BISHOP:
         return bishopIndex;
     case Piece::KNIGHT:
@@ -48,6 +50,6 @@ int PieceList::getPieceIndex(int pieceType)
     case Piece::QUEEN:
         return queenIndex;
     default:
-        return 0;
+        return -1;
     }
 }

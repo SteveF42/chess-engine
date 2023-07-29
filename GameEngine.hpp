@@ -2,8 +2,8 @@
 #define GameEngine_H
 #include <SFML/Graphics.hpp>
 #include "Board.hpp"
-#include <map>
 #include "AI.hpp"
+#include <map>
 
 struct SpriteData
 {
@@ -55,7 +55,7 @@ public:
         gameBoard = ReadFen::readFenString(fenString);
         loadTextures();
         loadSprites();
-        gameBoard->generateMovesInCurrentPosition();
+        gameBoard->moveGeneration.generateMovesInCurrentPosition();
         // long positions = AI::moveGenerationTest(4, *gameBoard);
         // std::cout << "Positions evaluated: " << positions;
     }

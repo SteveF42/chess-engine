@@ -8,8 +8,8 @@ long AI::moveGenerationTest(int depth, Board &position)
     if (depth == 0)
         return 1;
 
-    position.generateMovesInCurrentPosition();
-    auto moves = position.getMoves();
+    position.moveGeneration.generateMovesInCurrentPosition();
+    auto moves = position.moveGeneration.getMoves();
     long numPositions = 0;
 
     for(auto &[key,val] : moves){
@@ -27,14 +27,14 @@ int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINIT
     if (depth == 0)
         return generateEval(position);
 
-    position.generateMovesInCurrentPosition();
-    auto moveTable = position.getMoves();
+    position.moveGeneration.generateMovesInCurrentPosition();
+    auto moveTable = position.moveGeneration.getMoves();
     auto moves = orderMoves(moveTable, position);
 
     if (moves.empty())
     {
         // being in check is bad and if theres no moves then a stalemate has occurred
-        if (position.getCheck())
+        if (position.moveGeneration.getCheck())
             return -INFINITY;
         else
             return 0;
@@ -215,8 +215,8 @@ std::vector<Move> AI::orderMoves(std::vector<Move> &moveList, Board &position)
 
 std::vector<Move> AI::generateCaptures(Board &position)
 {
-    position.generateMovesInCurrentPosition();
-    auto moves = position.getMoves();
+    position.moveGeneration.generateMovesInCurrentPosition();
+    auto moves = position.moveGeneration.getMoves();
     std::vector<Move> validCaptures;
     Square **board = position.getBoard();
 

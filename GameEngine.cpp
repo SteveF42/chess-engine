@@ -116,7 +116,7 @@ void GameEngine::placePiece(std::string s)
         flag = false;
         placed = true;
         // I have to break out the generate moves function from the board class to take into account the potential pawn promotion
-        gameBoard->generateMovesInCurrentPosition();
+        gameBoard->moveGeneration.generateMovesInCurrentPosition();
     }
     else
     {
