@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include "Board.hpp"
 #include <map>
+#include "AI.hpp"
 
 struct SpriteData
 {
@@ -55,6 +56,8 @@ public:
         loadTextures();
         loadSprites();
         gameBoard->generateMovesInCurrentPosition();
+        // long positions = AI::moveGenerationTest(4, *gameBoard);
+        // std::cout << "Positions evaluated: " << positions;
     }
 
     bool isActive() { return window->isOpen(); }

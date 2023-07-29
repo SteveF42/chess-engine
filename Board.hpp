@@ -1,8 +1,9 @@
 #ifndef Board_H
 #define Board_H
-#include <string>
 #include "ReadFen.hpp"
 #include "Square.hpp"
+#include "PieceList.hpp"
+#include <string>
 #include <stack>
 
 struct Move
@@ -86,11 +87,13 @@ private:
     bool blackCastleQueenSide = false;
     bool whiteCastleQueenSide = false;
 
-    std::stack<Piece *> capturedPieces;
+    PieceList pieceList;
     std::stack<Move> moveHistory;
     std::stack<CastlingRights> castlingHistory;
+
     Piece *blackKing;
     Piece *whiteKing;
+    
 
     int numSquaresToEdge[64][8];
 

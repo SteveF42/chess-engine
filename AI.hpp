@@ -15,16 +15,18 @@ private:
     const static int INFINITY = INT_MAX;
 
     static int generateEval(Board position);
-    static std::vector<Move> orderMoves(std::map<int, std::vector<Move>> moveTable, Board &position);
-    static std::vector<Move> orderMoves(std::vector<Move> moveTable, Board &position);
+    static std::vector<Move> orderMoves(std::map<int, std::vector<Move>> &moveTable, Board &position);
+    static std::vector<Move> orderMoves(std::vector<Move> &moveTable, Board &position);
     static std::vector<Move> generateCaptures(Board &position);
     static int getPieceValue(int piece);
-    static int searchCaptures(Board position, int alpha, int beta);
+    static int searchCaptures(Board &position, int alpha, int beta);
     static void sortMoves(std::vector<Move> &moves, std::vector<int> &weights);
 
 public:
     static Move bestMove;
-    static int minimax(Board position, int depth = MAXDEPTH, int alpha = -INFINITY, int beta = INFINITY);
+    static int positions;
+    static int minimax(Board &position, int depth = MAXDEPTH, int alpha = -INFINITY, int beta = INFINITY);
+    static long moveGenerationTest(int depth, Board &position);
 };
 
 #endif

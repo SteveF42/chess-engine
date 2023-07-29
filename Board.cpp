@@ -121,35 +121,35 @@ std::map<int, std::vector<Move>> Board::pieceAvailableMoves()
     std::map<int, std::vector<Move>> positionMoves;
     int colorToMove = whiteToMove ? Piece::WHITE : Piece::BLACK;
 
-    for (int i = 0; i < 64; i++)
+    std::vector<Piece *> *pieces = pieceList.getPieces(whiteToMove);
+
+    // loops through only the pieces
+    for (int i = 0; i < PieceList::arrSize; i++)
     {
-        if (board[i]->hasNullPiece())
-            continue;
+        for (int j = 0; j < pieces[i].size(); j++)
+        {
+            std::vector<Move> pieceMoves;
+            Piece *piece = pieces[i][j];
 
-        Piece *piece = board[i]->getPiece();
-        if (piece->getPieceColor() != colorToMove)
-            continue;
-
-        std::vector<Move> pieceMoves;
-
-        int pieceType = piece->getPieceType();
-        if (pieceType == Piece::QUEEN || pieceType == Piece::BISHOP || pieceType == Piece::ROOK)
-        {
-            pieceMoves = getSlidingTypeMoves(piece);
+            int pieceType = piece->getPieceType();
+            if (pieceType == Piece::QUEEN || pieceType == Piece::BISHOP || pieceType == Piece::ROOK)
+            {
+                pieceMoves = getSlidingTypeMoves(piece);
+            }
+            else if (pieceType == Piece::KNIGHT)
+            {
+                pieceMoves = getKnightMoves(piece);
+            }
+            else if (pieceType == Piece::PAWN)
+            {
+                pieceMoves = getPawnMoves(piece);
+            }
+            else if (pieceType == Piece::KING)
+            {
+                pieceMoves = getKingMoves(piece);
+            }
+            positionMoves[piece->getPiecePosition()] = pieceMoves;
         }
-        else if (pieceType == Piece::KNIGHT)
-        {
-            pieceMoves = getKnightMoves(piece);
-        }
-        else if (pieceType == Piece::PAWN)
-        {
-            pieceMoves = getPawnMoves(piece);
-        }
-        else if (pieceType == Piece::KING)
-        {
-            pieceMoves = getKingMoves(piece);
-        }
-        positionMoves[i] = pieceMoves;
     }
     this->moveset = positionMoves;
     return moveset;
@@ -169,6 +169,8 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     int attackLeft = 9 * moveOffset;
     int attackRight = 7 * moveOffset;
     int forward1 = currentPosition + 8 * moveOffset;
+    int attackLeftFile = (currentPosition + attackLeft) % 8;
+    int attackRightFile = (currentPosition + attackRight) % 8;
 
     bool piecePinned = false;
     int pinDirection = 999;
@@ -208,7 +210,7 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
     }
 
     // left capture
-    if ((currentPosition + attackLeft) > 0 && (currentPosition + attackLeft) < 64 && pawnFile != 0 && pawnFile != 7)
+    if ((currentPosition + attackLeft) >= 0 && (currentPosition + attackLeft) < 64 && std::abs(pawnFile - attackLeftFile) == 1)
     {
 
         if (!board[currentPosition + attackLeft]->hasNullPiece() && board[currentPosition + attackLeft]->getPiece()->getPieceColor() != piece->getPieceColor())
@@ -222,7 +224,7 @@ std::vector<Move> Board::getPawnMoves(Piece *piece)
         }
     }
     // right capture
-    if ((currentPosition + attackRight) > 0 && (currentPosition + attackRight) < 64)
+    if ((currentPosition + attackRight) >= 0 && (currentPosition + attackRight) < 64 && std::abs(pawnFile - attackRightFile) == 1)
     {
 
         if (!board[currentPosition + attackRight]->hasNullPiece() && board[currentPosition + attackRight]->getPiece()->getPieceColor() != piece->getPieceColor())
@@ -474,6 +476,7 @@ void Board::makeMove(Move move)
         Piece *capturedPiece = endSquare->getPiece();
         move.capture = true;
         move.capturedPiece = capturedPiece;
+        pieceList.removePiece(capturedPiece);
 
         if (capturedPiece->getPieceType() == Piece::ROOK)
         {
@@ -511,6 +514,7 @@ void Board::makeMove(Move move)
         int offset = move.start - move.target == 9 ? -1 : 1;
         Piece *pawn = board[move.start + offset]->getPiece();
         move.capturedPiece = pawn;
+        pieceList.removePiece(pawn);
         board[move.start + offset]->setPiece(nullptr);
     }
     // pawn promotion
@@ -625,6 +629,7 @@ void Board::unmakeMove()
     {
         Piece *capturedPiece = move.capturedPiece;
         target->setPiece(capturedPiece);
+        pieceList.addPiece(capturedPiece);
     }
     // en passant move
     if (move.isEnPassant)
@@ -632,6 +637,7 @@ void Board::unmakeMove()
         possibleEnPassant = move.possibleEnPassant;
         int offset = move.start - move.target == 9 ? -1 : 1;
         board[move.start + offset]->setPiece(move.capturedPiece);
+        pieceList.addPiece(move.capturedPiece);
     }
     // pawn promotion
     if (move.pawnPromotion)
@@ -676,6 +682,7 @@ void Board::setSquarePiece(int idx, Piece *other)
 {
     bool isWhite = other->getPieceColor() == Piece::WHITE;
     board[idx]->setPiece(other);
+    pieceList.addPiece(other);
 
     if (isWhite)
     {

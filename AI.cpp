@@ -1,8 +1,28 @@
 #include "AI.hpp"
 
 Move AI::bestMove;
+int AI::positions;
 
-int AI::minimax(Board position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
+long AI::moveGenerationTest(int depth, Board &position)
+{
+    if (depth == 0)
+        return 1;
+
+    position.generateMovesInCurrentPosition();
+    auto moves = position.getMoves();
+    long numPositions = 0;
+
+    for(auto &[key,val] : moves){
+        for(auto &move : val){
+            position.makeMove(move);
+            numPositions += moveGenerationTest(depth-1,position);
+            position.unmakeMove();
+        }
+    }
+    return numPositions;
+}
+
+int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
         return generateEval(position);
@@ -24,6 +44,7 @@ int AI::minimax(Board position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY
     for (const auto &move : moves)
     {
         position.makeMove(move);
+        positions++;
         int eval = -minimax(position, depth - 1, -beta, -alpha);
         if (eval > bestEval)
         {
@@ -43,7 +64,7 @@ int AI::minimax(Board position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY
     return alpha;
 }
 
-int AI::searchCaptures(Board position, int alpha, int beta)
+int AI::searchCaptures(Board &position, int alpha, int beta)
 {
     int eval = generateEval(position);
 
@@ -133,7 +154,7 @@ int AI::generateEval(Board position)
     return eval * side;
 }
 
-std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> moveTable, Board &position)
+std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> &moveTable, Board &position)
 {
     std::vector<Move> moves;
     std::vector<int> scores;
@@ -165,7 +186,7 @@ std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> moveTable, Boa
     return moves;
 }
 
-std::vector<Move> AI::orderMoves(std::vector<Move> moveList, Board &position)
+std::vector<Move> AI::orderMoves(std::vector<Move> &moveList, Board &position)
 {
     std::vector<Move> moves;
     std::vector<int> scores;
