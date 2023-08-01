@@ -409,6 +409,7 @@ void MoveGeneration::generateMovesInCurrentPosition()
     this->pins = pins;
     this->checks = checks;
     this->checkFlag = inCheck;
+    this->moveset.clear();
 
     std::map<int, std::vector<Move>> moves;
     Piece *kingPiece = Board::whiteToMove ? whiteKing : blackKing;
@@ -442,34 +443,27 @@ void MoveGeneration::generateMovesInCurrentPosition()
                 }
             }
             // redo this function to iterate through the map properly
-            for (const auto &[key, val] : moves)
+            for (const auto &[key, pieceMoves] : moves)
             {
-                if (val.empty())
-                    continue;
-
-                int pieceLocation = val[0].start;
-                Piece *piece = board[pieceLocation]->getPiece();
-
+                Piece *piece = board[key]->getPiece();
                 if (piece->getPieceType() != Piece::KING) // the king isn't moving so another piece has to block or capture
                 {
-                    std::vector<Move> allowedMoves;
-                    for (int j = 0; j < val.size(); j++)
+                    this->moveset[key] = {};
+                    for (auto &move : pieceMoves)
                     {
-                        Move move = val[j];
-                        if (searchVector(validSquares, move.target)) // if the target square is not in the valid moves square
+                        if (searchVector(validSquares, move.target)) // if the target square is in the valid square list
                         {
-                            allowedMoves.push_back(val[j]);
+                            this->moveset[move.start].push_back(move);
                         }
                     }
-                    moves[key] = allowedMoves;
                 }
             }
         }
         else // double check king has to move
         {
-
             auto kingMoves = getKingMoves(kingPiece);
             moves[kingPiece->getPiecePosition()] = kingMoves;
+            this->moveset = moves;
         }
     }
     else
@@ -478,7 +472,6 @@ void MoveGeneration::generateMovesInCurrentPosition()
         moves = pieceAvailableMoves();
     }
 
-    this->moveset = moves;
 }
 
 void MoveGeneration::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<CheckOrPin> &checks, bool &inCheck)

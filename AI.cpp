@@ -27,7 +27,7 @@ long AI::moveGenerationTest(int depth, Board &position)
 int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
-        return searchCaptures(position, alpha, beta);
+        return generateEval(position);
 
     position.moveGeneration.generateMovesInCurrentPosition();
     auto moveTable = position.moveGeneration.getMoves();
@@ -54,7 +54,7 @@ int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINIT
             if (depth == MAXDEPTH)
                 bestMove = move;
         }
-        position.unmakeMove();
+        (void)position.unmakeMove();
         // opponent had a better move so don't use it
         if (eval >= beta)
         {
@@ -82,7 +82,7 @@ int AI::searchCaptures(Board &position, int alpha, int beta)
     {
         position.makeMove(capture);
         eval = -searchCaptures(position, -beta, -alpha);
-        position.unmakeMove();
+        (void)position.unmakeMove();
 
         if (eval >= beta)
             return beta;
@@ -139,8 +139,7 @@ std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> &moveTable, Bo
                 int targetPiece = position.getBoard()[move.start]->getPiece()->getPieceType();
                 moveScoreGuess += 10 * getPieceValue(targetPiece) - getPieceValue(movePieceType);
             }
-
-            if (move.pawnPromotion)
+            else if (move.pawnPromotion)
             {
                 moveScoreGuess += 10;
             }
@@ -180,6 +179,7 @@ std::vector<Move> AI::orderMoves(std::vector<Move> &moveList, Board &position)
     return moves;
 }
 
+//this is terribly inefficient since its generating all moves then generating removing the non captures
 std::vector<Move> AI::generateCaptures(Board &position)
 {
     position.moveGeneration.generateMovesInCurrentPosition();

@@ -2,6 +2,7 @@
 #define GameEngine_H
 #include <SFML/Graphics.hpp>
 #include "Board.hpp"
+#include"Move.hpp"
 #include "AI.hpp"
 #include <map>
 
@@ -26,13 +27,16 @@ private:
     const sf::Color DARKSQUARE = sf::Color(255, 207, 159);
     const sf::Color RED = sf::Color(255, 0, 0, 100);
     const sf::Color ORANGE = sf::Color(255, 165, 0, 100);
+    const sf::Color GOLD = sf::Color(214, 108, 102);
     const float screenOffsetMultiplyer = 1.5;
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;
+    bool pauseMoves = false;
 
     // SpriteData pieces[2][6];
     SpriteData *allSprites[32];
     std::map<int, sf::Sprite> pieceSprites;
+    Move lastMove;
 
     static void loadTextures();
     void loadSprites();
@@ -42,6 +46,7 @@ private:
     void drawPieces();
     void movePiece();
     void drawHighLightedSquare();
+    void drawLastMove();
     void drawPromotionPieces(int file, int color);
     Square *highLightedSquare = nullptr;
 
@@ -56,7 +61,7 @@ public:
         loadTextures();
         loadSprites();
         gameBoard->moveGeneration.generateMovesInCurrentPosition();
-        // long positions = AI::moveGenerationTest(4, *gameBoard);
+        // int positions = AI::moveGenerationTest(5, *gameBoard);
         // std::cout << "Positions evaluated: " << positions;
     }
 

@@ -146,10 +146,10 @@ void Board::makeMove(Move move)
     whiteToMove = !whiteToMove;
 }
 
-void Board::unmakeMove()
+Move Board::unmakeMove()
 {
     if (moveHistory.empty())
-        return;
+        return {};
     // call a move swap function or something
     Move move = moveHistory.top();
     moveHistory.pop();
@@ -214,6 +214,7 @@ void Board::unmakeMove()
     movesetHistory.pop();
 
     whiteToMove = !whiteToMove;
+    return move;
 }
 
 void Board::updateCastlingRights(const Move &move)

@@ -6,7 +6,6 @@
 #include "Square.hpp"
 #include "PieceList.hpp"
 
-
 struct CheckOrPin
 {
     int position;
@@ -24,8 +23,6 @@ struct CheckOrPin
     }
 };
 
-
-
 class MoveGeneration
 {
 private:
@@ -38,6 +35,7 @@ private:
     std::vector<CheckOrPin> pins;
     std::vector<CheckOrPin> checks;
     std::map<int, std::vector<Move>> moveset;
+    bool gameOver = false;
 
     Square **board;
     std::vector<Move> getSlidingTypeMoves(Piece *other);
@@ -67,6 +65,17 @@ public:
     void generateMovesInCurrentPosition();
     void setWhiteKing(Piece *king) { whiteKing = king; }
     void setblackKing(Piece *king) { blackKing = king; }
+    bool getGameOver()
+    {
+        for (auto &[key, val] : moveset)
+        {
+            for (auto &move : val)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     void setBoardRef(Square **boardRef)
     {
@@ -75,7 +84,7 @@ public:
     }
     int getPossibleEnPassant() { return possibleEnPassant; }
 
-    MoveGeneration(){}
+    MoveGeneration() {}
 };
 
 #endif

@@ -16,7 +16,7 @@ void GameEngine::update()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        if (!gameBoard->getWhiteToMove())
+        if (!gameBoard->getWhiteToMove() && !pauseMoves)
             continue;
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
@@ -42,42 +42,50 @@ void GameEngine::update()
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && event.type == sf::Event::KeyPressed)
         {
-            this->gameBoard->unmakeMove();
+            lastMove = this->gameBoard->unmakeMove();
+            pauseMoves = true;
         }
     }
-    if (gameBoard->gameOver)
+    if (gameBoard->moveGeneration.getGameOver())
+    {
+        window->setActive(false);
+        std::cout<<"Game Over " << (gameBoard->getWhiteToMove() ? "Black Wins" : "White Wins") << '\n';
         return;
+    }
 
     window->setSize(sf::Vector2u(1000.f, 1000.f));
     window->clear();
 
     this->drawBoard();
+    this->drawLastMove();
     this->drawHighLightedSquare();
     this->drawPieces();
+
     if (gameBoard->getWhiteToMove())
     {
         this->movePiece();
         window->display();
     }
     // this->movePiece();
-
+    // window->display();
     else
     {
         window->display();
-        // since AI is a static class I have to manually initialize the bestmove here which is bad
-        AI::bestMove = Move();
-        AI::positions = 0;
-        int eval = AI::minimax(*gameBoard);
-        std::cout << "Positions evaluated: " << AI::positions << '\n';
-        Move &bestMove = AI::bestMove;
-        if (bestMove.start == bestMove.target)
+        if (!pauseMoves)
         {
-            gameBoard->gameOver = true;
-        }
-        else
-        {
-            gameBoard->makeMove(bestMove);
-            gameBoard->moveGeneration.generateMovesInCurrentPosition();
+
+            // since AI is a static class I have to manually initialize the bestmove here which is bad
+            AI::bestMove = Move();
+            AI::positions = 0;
+            int eval = AI::minimax(*gameBoard);
+            std::cout << "Positions evaluated: " << AI::positions << '\n';
+            Move &bestMove = AI::bestMove;
+            lastMove = bestMove;
+            if (bestMove.start != bestMove.target)
+            {
+                gameBoard->makeMove(bestMove);
+                gameBoard->moveGeneration.generateMovesInCurrentPosition();
+            }
         }
     }
 }
@@ -93,6 +101,7 @@ void GameEngine::placePiece(std::string s)
     // validate the move
 
     Piece *piece = highLightedSquare->getPiece();
+    int startPos = piece->getPiecePosition();
     // pawn promotion
     bool validMove = gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition);
     if (validMove)
@@ -112,9 +121,12 @@ void GameEngine::placePiece(std::string s)
                 drawPromotionPieces(squarePosition, Piece::BLACK);
             }
         }
+        this->lastMove.start = startPos;
+        this->lastMove.target = squarePosition;
         highLightedSquare = nullptr;
         flag = false;
         placed = true;
+        pauseMoves = false;
         // I have to break out the generate moves function from the board class to take into account the potential pawn promotion
         gameBoard->moveGeneration.generateMovesInCurrentPosition();
     }
@@ -136,6 +148,27 @@ void GameEngine::placePiece(std::string s)
             placed = true;
         }
     }
+}
+
+void GameEngine::drawLastMove()
+{
+    if (lastMove.start == lastMove.target)
+        return;
+
+    // draws start square
+    int file = lastMove.start % 8;
+    int rank = lastMove.start / 8;
+    sf::RectangleShape rectangle(sf::Vector2(SQUARESIZE, SQUARESIZE));
+    rectangle.setPosition(sf::Vector2((file * SQUARESIZE), rank * SQUARESIZE));
+    rectangle.setFillColor(GOLD);
+    window->draw(rectangle);
+
+    // draws end square
+    file = lastMove.target % 8;
+    rank = lastMove.target / 8;
+    rectangle.setPosition(sf::Vector2((file * SQUARESIZE), rank * SQUARESIZE));
+    rectangle.setFillColor(GOLD);
+    window->draw(rectangle);
 }
 
 void GameEngine::selectPieceOrSquare()
