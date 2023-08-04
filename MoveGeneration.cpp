@@ -411,8 +411,8 @@ void MoveGeneration::generateMovesInCurrentPosition()
     this->checkFlag = inCheck;
     this->moveset.clear();
 
-    std::map<int, std::vector<Move>> moves;
     Piece *kingPiece = Board::whiteToMove ? whiteKing : blackKing;
+    std::map<int, std::vector<Move>> moves;
 
     if (inCheck)
     {
@@ -448,30 +448,31 @@ void MoveGeneration::generateMovesInCurrentPosition()
                 Piece *piece = board[key]->getPiece();
                 if (piece->getPieceType() != Piece::KING) // the king isn't moving so another piece has to block or capture
                 {
-                    this->moveset[key] = {};
                     for (auto &move : pieceMoves)
                     {
                         if (searchVector(validSquares, move.target)) // if the target square is in the valid square list
                         {
-                            this->moveset[move.start].push_back(move);
+                            this->moveset[key].push_back(move);
                         }
                     }
+                }
+                else if (pieceMoves.size() != 0)
+                {
+                    this->moveset[key] = pieceMoves;
                 }
             }
         }
         else // double check king has to move
         {
             auto kingMoves = getKingMoves(kingPiece);
-            moves[kingPiece->getPiecePosition()] = kingMoves;
-            this->moveset = moves;
+            this->moveset[kingPiece->getPiecePosition()] = kingMoves;
         }
     }
     else
     {
         // not in check
-        moves = pieceAvailableMoves();
+        this->moveset = pieceAvailableMoves();
     }
-
 }
 
 void MoveGeneration::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::vector<CheckOrPin> &checks, bool &inCheck)
@@ -599,8 +600,8 @@ std::map<int, std::vector<Move>> MoveGeneration::pieceAvailableMoves()
 {
 
     std::map<int, std::vector<Move>> positionMoves;
-    int colorToMove = Board::whiteToMove ? Piece::WHITE : Piece::BLACK;
-    std::vector<Piece *> *pieces = pieceList.getPieces(Board::whiteToMove);
+    int colorToMove = Board::whiteToMove ? PieceList::whiteIndex : PieceList::blackIndex;
+    std::vector<Piece *> *pieces = pieceList.getPieces(colorToMove);
 
     // loops through only the pieces
     for (int i = 0; i < PieceList::arrSize; i++)
@@ -637,6 +638,5 @@ std::map<int, std::vector<Move>> MoveGeneration::pieceAvailableMoves()
         positionMoves[blackKing->getPiecePosition()] = pieceMoves;
     }
 
-    this->moveset = positionMoves;
-    return moveset;
+    return positionMoves;
 }

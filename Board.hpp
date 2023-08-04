@@ -31,6 +31,13 @@ private:
 
 public:
     static bool whiteToMove;
+    Piece* getKing(int colorIndex){
+        if(colorIndex == PieceList::whiteIndex){
+            return moveGeneration.getWhiteKing();
+        }else{
+            return moveGeneration.getBlackKing();
+        }
+    }
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     void generateMovesInCurrentPosition();
     void promotePawn(int pieceLocation, int pieceType);

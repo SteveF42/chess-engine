@@ -29,9 +29,8 @@ void PieceList::removePiece(Piece *piece)
     }
 }
 
-std::vector<Piece *>* PieceList::getPieces(bool whiteToMove)
+std::vector<Piece *>* PieceList::getPieces(int sideIndex)
 {
-    int sideIndex = whiteToMove ? whiteIndex : blackIndex;
     return pieces[sideIndex];
 }
 

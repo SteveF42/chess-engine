@@ -6,19 +6,6 @@
 #include "AI.hpp"
 #include <map>
 
-struct SpriteData
-{
-    sf::Sprite *sprite;
-    int pieceType;
-    bool inUse = false;
-    Piece *piecePtr;
-    SpriteData(sf::Sprite *other, int type)
-    {
-        sprite = other;
-        pieceType = type;
-    }
-    SpriteData() {}
-};
 
 class GameEngine
 {
@@ -33,10 +20,8 @@ private:
     Board *gameBoard;
     bool pauseMoves = false;
 
-    // SpriteData pieces[2][6];
-    SpriteData *allSprites[32];
     std::map<int, sf::Sprite> pieceSprites;
-    Move lastMove;
+    Move lastMove = Move(-1,-1,-1);
 
     static void loadTextures();
     void loadSprites();

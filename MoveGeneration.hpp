@@ -65,16 +65,11 @@ public:
     void generateMovesInCurrentPosition();
     void setWhiteKing(Piece *king) { whiteKing = king; }
     void setblackKing(Piece *king) { blackKing = king; }
+    Piece* getWhiteKing(){return whiteKing;}
+    Piece* getBlackKing(){return blackKing;}
     bool getGameOver()
     {
-        for (auto &[key, val] : moveset)
-        {
-            for (auto &move : val)
-            {
-                return false;
-            }
-        }
-        return true;
+        return moveset.size() == 0;
     }
 
     void setBoardRef(Square **boardRef)
