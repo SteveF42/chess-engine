@@ -19,7 +19,6 @@ class Board
 private:
     std::stack<std::map<int, std::vector<Move>>> movesetHistory;
     std::stack<Move> moveHistory;
-    int possibleEnPassant;
     Square *board[64];
 
     std::stack<CastlingRights> castlingHistory;
@@ -31,16 +30,18 @@ private:
 
 public:
     static bool whiteToMove;
-    Piece* getKing(int colorIndex){
-        if(colorIndex == PieceList::whiteIndex){
+    Piece *getKing(int colorIndex)
+    {
+        if (colorIndex == PieceList::whiteIndex)
+        {
             return moveGeneration.getWhiteKing();
-        }else{
+        }
+        else
+        {
             return moveGeneration.getBlackKing();
         }
     }
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
-    void generateMovesInCurrentPosition();
-    void promotePawn(int pieceLocation, int pieceType);
     Move unmakeMove();
     void makeMove(Move move);
     std::vector<Move> getPieceMoves(int idx);

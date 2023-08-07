@@ -33,8 +33,10 @@ public:
     static int isColor(int piece, int color) { return (piece & colourMask) == color; }
 
     Piece(int pieceType, int piecePosition);
-    void revertSprite(){
-        if(previousSprite == nullptr) return;
+    void revertSprite()
+    {
+        if (previousSprite == nullptr)
+            return;
 
         previousSprite->setPosition(sprite->getPosition());
         delete sprite;
@@ -46,11 +48,11 @@ public:
         return getPieceType(pieceType);
     }
     int getPieceTypeRaw() { return this->pieceType; }
+    void promoteType(int pieceType);
 
     int getPieceColor() { return getPieceColor(pieceType); }
     int getPiecePosition() { return currentPosition; }
     void setPiecePosition(int positionOnBoard);
-    void setPieceType(int type) { this->pieceType = type; }
 };
 
 #endif

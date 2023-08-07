@@ -14,7 +14,7 @@ private:
     const sf::Color DARKSQUARE = sf::Color(255, 207, 159);
     const sf::Color RED = sf::Color(255, 0, 0, 100);
     const sf::Color ORANGE = sf::Color(255, 165, 0, 100);
-    const sf::Color GOLD = sf::Color(214, 108, 102);
+    const sf::Color GOLD = sf::Color(214, 108, 102,200);
     const float screenOffsetMultiplyer = 1.5;
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;

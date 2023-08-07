@@ -31,7 +31,8 @@ private:
     const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
 
     bool checkFlag;
-    int possibleEnPassant;
+    bool quietSearch;
+
     std::vector<CheckOrPin> pins;
     std::vector<CheckOrPin> checks;
     std::map<int, std::vector<Move>> moveset;
@@ -57,16 +58,17 @@ public:
     bool whiteCastleKingSide = false;
     bool blackCastleQueenSide = false;
     bool whiteCastleQueenSide = false;
+    int possibleEnPassant;
 
     PieceList pieceList;
     bool getCheck() { return checkFlag; }
     std::map<int, std::vector<Move>> getMoves() { return moveset; }
     void setMoves(std::map<int, std::vector<Move>> moves) { moveset = moves; }
-    void generateMovesInCurrentPosition();
+    void generateMovesInCurrentPosition(bool quietSearch = false);
     void setWhiteKing(Piece *king) { whiteKing = king; }
     void setblackKing(Piece *king) { blackKing = king; }
-    Piece* getWhiteKing(){return whiteKing;}
-    Piece* getBlackKing(){return blackKing;}
+    Piece *getWhiteKing() { return whiteKing; }
+    Piece *getBlackKing() { return blackKing; }
     bool getGameOver()
     {
         return moveset.size() == 0;

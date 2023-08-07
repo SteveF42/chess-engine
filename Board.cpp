@@ -17,7 +17,7 @@ std::vector<Move> Board::getPieceMoves(int idx)
 
 bool Board::validateMove(int startIdx, int target)
 {
-    for (auto move : moveGeneration.getMoves()[startIdx])
+    for (auto &move : getPieceMoves(startIdx))
     {
         if (move.target == target)
         {
@@ -30,29 +30,17 @@ bool Board::validateMove(int startIdx, int target)
 
 void Board::makeMove(Move move)
 {
-    // call a move swap function or something
     Square *startSquare = board[move.start];
     Square *endSquare = board[move.target];
     Piece *piece = startSquare->getPiece();
+    int perspective = whiteToMove ? 1 : -1;
     int startRank = move.start / 8;
     int endRank = move.target / 8;
 
-    if (piece->getPieceType() == Piece::PAWN && std::abs(startRank - endRank) == 2)
-    {
-        this->possibleEnPassant = (move.start + move.target) / 2;
-        move.possibleEnPassant = this->possibleEnPassant;
-    }
-    else
-    {
-        this->possibleEnPassant = 999;
-        move.possibleEnPassant = 999;
-    }
-
     // capture
-    if (!endSquare->hasNullPiece())
+    if (move.capture && !move.isEnPassant)
     {
         Piece *capturedPiece = endSquare->getPiece();
-        move.capture = true;
         move.capturedPiece = capturedPiece;
         moveGeneration.pieceList.removePiece(capturedPiece);
 
@@ -89,26 +77,23 @@ void Board::makeMove(Move move)
     // en passant move
     else if (move.isEnPassant)
     {
-        int offset = move.start - move.target == 9 ? -1 : 1;
+        int offset = std::abs(move.start - move.target) == 9 ? -1 : 1;
+        offset = offset * perspective;
         Piece *pawn = board[move.start + offset]->getPiece();
         move.capturedPiece = pawn;
         moveGeneration.pieceList.removePiece(pawn);
         board[move.start + offset]->setPiece(nullptr);
     }
     // pawn promotion
-    else if (piece->getPieceType() == Piece::PAWN)
+    if (piece->getPieceType() == Piece::PAWN && move.pawnPromotion)
     {
-        if (piece->getPieceColor() == Piece::WHITE && endSquare->getSquarePosition() == 0)
-        {
-            move.pawnPromotion = true;
-        }
-        else if (piece->getPieceColor() == Piece::BLACK && endSquare->getSquarePosition() == 7)
-        {
-            move.pawnPromotion = true;
-        }
+        moveGeneration.pieceList.removePiece(piece);
+        piece->promoteType(Piece::QUEEN);
+        // removes it from the pawn list and adds it to it to its corresponding pieceList
+        moveGeneration.pieceList.addPiece(piece);
     }
     // castle move
-    else if (move.isCastle)
+    if (move.isCastle)
     {
         int startFile = move.start % 8;
         int endFile = move.target % 8;
@@ -126,6 +111,18 @@ void Board::makeMove(Move move)
             board[move.target - 2]->setPiece(nullptr);
             board[move.target + 1]->setPiece(rook);
         }
+    }
+
+    // enable en pessant
+    if (piece->getPieceType() == Piece::PAWN && std::abs(startRank - endRank) == 2)
+    {
+        moveGeneration.possibleEnPassant = (move.start + move.target) / 2;
+        move.possibleEnPassant = moveGeneration.possibleEnPassant;
+    }
+    else
+    {
+        moveGeneration.possibleEnPassant = -1;
+        move.possibleEnPassant = -1;
     }
 
     CastlingRights oldRights;
@@ -156,6 +153,9 @@ Move Board::unmakeMove()
     Square *target = board[move.target];
     Square *start = board[move.start];
     Piece *movedPiece = target->getPiece();
+    
+    whiteToMove = !whiteToMove;
+    int perspective = whiteToMove ?  1 : -1;
 
     // moves piece back to original square
     movedPiece->setPiecePosition(move.start);
@@ -163,25 +163,26 @@ Move Board::unmakeMove()
     target->setPiece(nullptr);
 
     // capture
-    if (move.capture)
+    if (move.capture && !move.isEnPassant)
     {
         Piece *capturedPiece = move.capturedPiece;
         target->setPiece(capturedPiece);
         moveGeneration.pieceList.addPiece(capturedPiece);
     }
     // en passant move
-    if (move.isEnPassant)
+    else if (move.isEnPassant)
     {
-        possibleEnPassant = move.possibleEnPassant;
-        int offset = move.start - move.target == 9 ? -1 : 1;
+        int offset = std::abs(move.start - move.target) == 9 ? -1 : 1;
+        offset = offset * perspective;
         board[move.start + offset]->setPiece(move.capturedPiece);
         moveGeneration.pieceList.addPiece(move.capturedPiece);
     }
     // pawn promotion
     if (move.pawnPromotion)
     {
-        movedPiece->setPieceType(Piece::PAWN | movedPiece->getPieceColor());
-        movedPiece->revertSprite();
+        moveGeneration.pieceList.removePiece(movedPiece);
+        movedPiece->promoteType(Piece::PAWN);
+        moveGeneration.pieceList.addPiece(movedPiece);
     }
     // castle move
     if (move.isCastle)
@@ -210,10 +211,10 @@ Move Board::unmakeMove()
     moveGeneration.whiteCastleQueenSide = castleHistory.whiteCastleQueenSide;
     castlingHistory.pop();
 
+    moveGeneration.possibleEnPassant = move.possibleEnPassant;
     this->moveGeneration.setMoves(movesetHistory.top());
     movesetHistory.pop();
 
-    whiteToMove = !whiteToMove;
     return move;
 }
 
@@ -274,10 +275,4 @@ void Board::setSquarePiece(int idx, Piece *other)
             moveGeneration.setblackKing(other);
         }
     }
-}
-
-void Board::promotePawn(int pieceLocation, int pieceType)
-{
-    Piece *piece = board[pieceLocation]->getPiece();
-    piece->setPieceType(pieceType);
 }

@@ -26,5 +26,9 @@ Piece::Piece(int pieceType, int piecePosition)
 void Piece::setPiecePosition(int positionOnBoard)
 {
     currentPosition = positionOnBoard;
+}
 
+void Piece::promoteType(int pieceType)
+{
+    this->pieceType = pieceType | this->getPieceColor();
 }

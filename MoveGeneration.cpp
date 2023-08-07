@@ -53,7 +53,8 @@ std::vector<Move> MoveGeneration::getSlidingTypeMoves(Piece *piece)
 
             if (board[target]->hasNullPiece())
             {
-                possibleMoves.push_back(newMove);
+                if (quietSearch == false) //only generate captures
+                    possibleMoves.push_back(newMove);
             }
             else
             {
@@ -64,6 +65,7 @@ std::vector<Move> MoveGeneration::getSlidingTypeMoves(Piece *piece)
                 {
                     break;
                 }
+                newMove.capture = true;
                 possibleMoves.push_back(newMove);
                 break;
             }
@@ -109,14 +111,18 @@ std::vector<Move> MoveGeneration::getPawnMoves(Piece *piece)
         return {};
     }
 
-    if (board[forward1]->hasNullPiece())
+    if (board[forward1]->hasNullPiece() && !quietSearch)
     {
         if (!piecePinned || pinDirection == 8 * moveOffset) // move is up or down the board
         {
             // move forward 1
             Move move1(currentPosition, forward1, piece->getPieceTypeRaw());
-            validMoves.push_back(move1);
+            if (pieceRank == pawnPromotion)
+            {
+                move1.pawnPromotion = true;
+            }
 
+            validMoves.push_back(move1);
             // move forward 2
             if (pieceRank == pawnStart && board[currentPosition + 16 * moveOffset]->hasNullPiece())
             {
@@ -136,6 +142,11 @@ std::vector<Move> MoveGeneration::getPawnMoves(Piece *piece)
             {
 
                 Move takeLeft(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw());
+                if (pieceRank == pawnPromotion)
+                {
+                    takeLeft.pawnPromotion = true;
+                }
+                takeLeft.capture = true;
                 validMoves.push_back(takeLeft);
             }
         }
@@ -150,21 +161,28 @@ std::vector<Move> MoveGeneration::getPawnMoves(Piece *piece)
             {
 
                 Move takeRight(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw());
+                if (pieceRank == pawnPromotion)
+                {
+                    takeRight.pawnPromotion = true;
+                }
+                takeRight.capture = true;
                 validMoves.push_back(takeRight);
             }
         }
     }
     // enPassant moves
-    if (currentPosition + attackRight == possibleEnPassant)
-    {
-        Move takeRightPassant(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw(), true);
-        validMoves.push_back(takeRightPassant);
-    }
-    if (currentPosition + attackLeft == possibleEnPassant && pawnFile != 0 && pawnFile != 7)
-    {
-        Move takeLeftPassant(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw(), true);
-        validMoves.push_back(takeLeftPassant);
-    }
+    // if ((!piecePinned || pinDirection == 7 * moveOffset) && currentPosition + attackRight == this->possibleEnPassant)
+    // {
+    //     Move takeRightPassant(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw(), true);
+    //     takeRightPassant.capture = true;
+    //     validMoves.push_back(takeRightPassant);
+    // }
+    // if ((!piecePinned || pinDirection == 9 * moveOffset) && currentPosition + attackLeft == this->possibleEnPassant)
+    // {
+    //     Move takeLeftPassant(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw(), true);
+    //     takeLeftPassant.capture = true;
+    //     validMoves.push_back(takeLeftPassant);
+    // }
 
     return validMoves;
 }
@@ -194,23 +212,35 @@ std::vector<Move> MoveGeneration::getKingMoves(Piece *piece)
             continue;
 
         Move move(currentLocation, target, piece->getPieceTypeRaw());
+        Piece *otherPiece = nullptr;
 
         if (!board[target]->hasNullPiece())
         {
-            Piece *otherPiece = board[target]->getPiece();
+            otherPiece = board[target]->getPiece();
             int otherPieceColor = otherPiece->getPieceColor();
             int currentPieceColor = pieceColor;
             if (otherPieceColor == currentPieceColor)
                 continue;
         }
+        //quiet search only generates captures
+        if (quietSearch == true && otherPiece == nullptr)
+        {
+            continue;
+        }
 
         int originalKingPos = piece->getPiecePosition();
         piece->setPiecePosition(target);
+        board[target]->setPiece(piece);
         checkForPinsAndChecks(pins, checks, inCheck);
         if (!inCheck)
         {
+            if (otherPiece != nullptr)
+                move.capture = true;
+
             validMoves.push_back(move);
         }
+        board[target]->setPiece(otherPiece);
+        board[originalKingPos]->setPiece(piece);
         piece->setPiecePosition(originalKingPos);
     }
 
@@ -245,7 +275,7 @@ std::vector<Move> MoveGeneration::getKnightMoves(Piece *piece)
     for (int i = 0; i < 8; i++)
     {
         if (piecePinned)
-            continue;
+            break;
 
         int target = currentLocation + knightOffset[i];
         if (target >= 64 || target < 0)
@@ -263,23 +293,27 @@ std::vector<Move> MoveGeneration::getKnightMoves(Piece *piece)
         move.pieceType = piece->getPieceTypeRaw();
         if (board[target]->hasNullPiece())
         {
-            validMoves.push_back(move);
-            continue;
+            if (quietSearch == false) //only generate captures
+                validMoves.push_back(move);
         }
+        else
+        {
 
-        Piece *otherPiece = board[target]->getPiece();
-        int otherPieceColor = otherPiece->getPieceColor();
-        int currentPieceColor = pieceColor;
-        if (otherPieceColor == currentPieceColor)
-            continue;
-        validMoves.push_back(move);
+            Piece *otherPiece = board[target]->getPiece();
+            int otherPieceColor = otherPiece->getPieceColor();
+            int currentPieceColor = pieceColor;
+            if (otherPieceColor == currentPieceColor)
+                continue;
+            move.capture = true;
+            validMoves.push_back(move);
+        }
     }
     return validMoves;
 }
 
 void MoveGeneration::getCastleMoves(std::vector<Move> &validMoves, Piece *kingPiece)
 {
-    if (checkFlag)
+    if (checkFlag || quietSearch)
         return;
 
     int currLocation = kingPiece->getPiecePosition();
@@ -399,11 +433,12 @@ bool MoveGeneration::squareUnderAttack(int square, int allyColor)
     return false;
 }
 
-void MoveGeneration::generateMovesInCurrentPosition()
+void MoveGeneration::generateMovesInCurrentPosition(bool quietSearch /*=false*/)
 {
     std::vector<CheckOrPin> pins;
     std::vector<CheckOrPin> checks;
     bool inCheck = false;
+    this->quietSearch = quietSearch;
 
     this->checkForPinsAndChecks(pins, checks, inCheck);
     this->pins = pins;
@@ -412,14 +447,13 @@ void MoveGeneration::generateMovesInCurrentPosition()
     this->moveset.clear();
 
     Piece *kingPiece = Board::whiteToMove ? whiteKing : blackKing;
-    std::map<int, std::vector<Move>> moves;
 
     if (inCheck)
     {
 
         if (this->checks.size() == 1) // if there is exactly one check location
         {
-            moves = pieceAvailableMoves();
+            std::map<int, std::vector<Move>> moves = pieceAvailableMoves();
             // to block check a piece has to move between the attacking piece and king
             auto check = checks[0];
             int checkPosition = check.position;
@@ -505,8 +539,8 @@ void MoveGeneration::checkForPinsAndChecks(std::vector<CheckOrPin> &pins, std::v
                 }
                 else
                 {
-                    possiblePin.position = -1111;
-                    possiblePin.direction = -1111;
+                    possiblePin.position = 0;
+                    possiblePin.direction = 0;
                     pinExists = false;
                     break; // second ally piece so no pin or check is possible
                 }

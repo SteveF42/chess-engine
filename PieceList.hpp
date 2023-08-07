@@ -7,7 +7,7 @@
 class PieceList
 {
 private:
-    std::vector<Piece *> pieces[2][5];
+    std::vector<Piece *> pieces[2][5] = {{{}, {}, {}, {}, {}}, {{}, {}, {}, {}, {}}};
     int getPieceIndex(int pieceType);
 
 public:

@@ -16,8 +16,8 @@ void GameEngine::update()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        if (!gameBoard->getWhiteToMove() && !pauseMoves)
-            continue;
+        // if (!gameBoard->getWhiteToMove() && !pauseMoves)
+        //     continue;
 
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
@@ -96,7 +96,7 @@ void GameEngine::placePiece(std::string s)
     sf::Vector2u windowSize = window->getSize();
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
-    int file = squarePosition % 8;
+            int file = squarePosition % 8;
     int rank = squarePosition / 8;
     // validate the move
 
@@ -195,11 +195,6 @@ void GameEngine::selectPieceOrSquare()
     Piece *piece = board[squarePosition]->getPiece();
 
     highLightedSquare = nullptr;
-    if (piece->getPieceColor() == Piece::BLACK && gameBoard->getWhiteToMove())
-        return;
-    if (piece->getPieceColor() == Piece::WHITE && !gameBoard->getWhiteToMove())
-        return;
-
     highLightedSquare = board[squarePosition];
 }
 
@@ -350,22 +345,22 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
 
                 if (pieceChoice == 0)
                 {
-                    gameBoard->promotePawn(squareIndx, Piece::QUEEN | color);
+                    piece->promoteType(Piece::QUEEN);
                     done = true;
                 }
                 else if (pieceChoice == 8)
                 {
-                    gameBoard->promotePawn(squareIndx, Piece::ROOK | color);
+                    piece->promoteType(Piece::ROOK);
                     done = true;
                 }
                 else if (pieceChoice == 16)
                 {
-                    gameBoard->promotePawn(squareIndx, Piece::BISHOP | color);
+                    piece->promoteType(Piece::BISHOP);
                     done = true;
                 }
                 else if (pieceChoice == 24)
                 {
-                    gameBoard->promotePawn(squareIndx, Piece::KNIGHT | color);
+                    piece->promoteType(Piece::KNIGHT);
                     done = true;
                 }
             }

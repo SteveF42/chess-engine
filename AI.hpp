@@ -16,18 +16,16 @@ private:
 
     static int evaluate(Board &position);
     static float endgamePhaseWeight(int materialCountWithoutPawns);
-    static int evaluatePieceSquareTables(int colourIndex, float endgamePhaseWeight);
-    static int evaluatePieceSquareTable(const int table[], std::vector<Piece*> &pieceList, bool isWhite);
+    static int evaluatePieceSquareTables(Board &position,int colourIndex, float endgamePhaseWeight);
+    static int evaluatePieceSquareTable(const int table[], std::vector<Piece *> &pieceList, bool isWhite);
     // static int mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight);
-    static int countMaterial(int pieceIndex);
+    static int countMaterial(Board &position, int pieceIndex);
     static std::vector<Move> orderMoves(std::map<int, std::vector<Move>> &moveTable, Board &position);
     static std::vector<Move> orderMoves(std::vector<Move> &moveTable, Board &position);
     static std::vector<Move> generateCaptures(Board &position);
     static int getPieceValue(int piece);
     static int searchCaptures(Board &position, int alpha, int beta);
     static void sortMoves(std::vector<Move> &moves, std::vector<int> &weights);
-
-    static Board *board;
 
 public:
     static Move bestMove;

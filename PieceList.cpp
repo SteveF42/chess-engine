@@ -15,6 +15,8 @@ void PieceList::removePiece(Piece *piece)
 {
     int colorIndex = piece->getPieceColor() == Piece::WHITE ? whiteIndex : blackIndex;
     int pieceIndex = getPieceIndex(piece->getPieceType());
+    if(pieceIndex == -1)
+        return;
 
     auto &pieceList = pieces[colorIndex][pieceIndex];
 
@@ -25,6 +27,7 @@ void PieceList::removePiece(Piece *piece)
         if (other->getPiecePosition() == piece->getPiecePosition())
         {
             pieceList.erase(pieceList.begin() + i);
+            return;
         }
     }
 }
