@@ -1,11 +1,11 @@
 #ifndef GameEngine_H
 #define GameEngine_H
 #include <SFML/Graphics.hpp>
+#include "ReadFen.hpp"
 #include "Board.hpp"
-#include"Move.hpp"
+#include "Move.hpp"
 #include "AI.hpp"
 #include <map>
-
 
 class GameEngine
 {
@@ -14,14 +14,14 @@ private:
     const sf::Color DARKSQUARE = sf::Color(255, 207, 159);
     const sf::Color RED = sf::Color(255, 0, 0, 100);
     const sf::Color ORANGE = sf::Color(255, 165, 0, 100);
-    const sf::Color GOLD = sf::Color(214, 108, 102,200);
+    const sf::Color GOLD = sf::Color(214, 108, 102, 200);
     const float screenOffsetMultiplyer = 1.5;
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;
     bool pauseMoves = false;
 
     std::map<int, sf::Sprite> pieceSprites;
-    Move lastMove = Move(-1,-1,-1);
+    Move lastMove = Move(-1, -1, -1);
 
     static void loadTextures();
     void loadSprites();
@@ -45,7 +45,7 @@ public:
         gameBoard = ReadFen::readFenString(fenString);
         loadTextures();
         loadSprites();
-        gameBoard->moveGeneration.generateMovesInCurrentPosition();
+        gameBoard->moveGeneration.generateMoves(gameBoard);
         // int positions = AI::moveGenerationTest(5, *gameBoard);
         // std::cout << "Positions evaluated: " << positions;
     }

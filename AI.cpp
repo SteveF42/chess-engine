@@ -4,43 +4,38 @@
 Move AI::bestMove;
 int AI::positions;
 
-long AI::moveGenerationTest(int depth, Board &position)
+long AI::moveGenerationTest(int depth, Board *position)
 {
     if (depth == 0)
         return 1;
 
-    position.moveGeneration.generateMovesInCurrentPosition();
-    auto moves = position.moveGeneration.getMoves();
+    auto moves = position->moveGeneration.generateMoves(position);
     long numPositions = 0;
 
-    for (auto &[key, val] : moves)
+    for (auto move : moves)
     {
-        for (auto &move : val)
-        {
-            position.makeMove(move);
-            numPositions += moveGenerationTest(depth - 1, position);
-            bestMove = move;
-            position.unmakeMove();
-        }
+        position->makeMove(move);
+        numPositions += moveGenerationTest(depth - 1, position);
+        bestMove = move;
+        position->unmakeMove();
     }
     return numPositions;
 }
 
-int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
+int AI::minimax(Board *position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
         return searchCaptures(position, alpha, beta);
 
     positions++;
 
-    position.moveGeneration.generateMovesInCurrentPosition();
-    auto moveTable = position.moveGeneration.getMoves();
-    auto moves = orderMoves(moveTable, position);
+    auto moves = position->moveGeneration.generateMoves(position);
+    orderMoves(moves, position);
 
     if (moves.empty())
     {
         // being in check is bad and if theres no moves then a stalemate has occurred
-        if (position.moveGeneration.getCheck())
+        if (position->moveGeneration.isCheck())
             return -INFINITY;
         else
             return 0;
@@ -48,9 +43,9 @@ int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINIT
 
     for (const auto &move : moves)
     {
-        position.makeMove(move);
+        position->makeMove(move);
         int eval = -minimax(position, depth - 1, -beta, -alpha);
-        position.unmakeMove();
+        position->unmakeMove();
         // opponent had a better move so don't use it
         if (eval >= beta)
         {
@@ -70,7 +65,7 @@ int AI::minimax(Board &position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINIT
     return alpha;
 }
 
-int AI::searchCaptures(Board &position, int alpha, int beta)
+int AI::searchCaptures(Board *position, int alpha, int beta)
 {
     int eval = evaluate(position);
     AI::positions++;
@@ -79,15 +74,13 @@ int AI::searchCaptures(Board &position, int alpha, int beta)
         return beta;
     alpha = std::max(alpha, eval);
 
-    position.moveGeneration.generateMovesInCurrentPosition(true);
-    auto captureMoves = position.moveGeneration.getMoves();
-    auto moves = orderMoves(captureMoves, position);
+    auto captures = position->moveGeneration.generateMoves(position,false);
 
-    for (auto &capture : moves)
+    for (auto &capture : captures)
     {
-        position.makeMove(capture);
+        position->makeMove(capture);
         eval = -searchCaptures(position, -beta, -alpha);
-        position.unmakeMove();
+        position->unmakeMove();
 
         if (eval >= beta)
             return beta;
@@ -96,7 +89,7 @@ int AI::searchCaptures(Board &position, int alpha, int beta)
     return alpha;
 }
 
-int AI::evaluate(Board &position)
+int AI::evaluate(Board *position)
 {
     int whiteEval = 0;
     int blackEval = 0;
@@ -104,8 +97,8 @@ int AI::evaluate(Board &position)
     int whiteMaterial = countMaterial(position, PieceList::whiteIndex);
     int blackMaterial = countMaterial(position, PieceList::blackIndex);
 
-    int whiteMaterialWithNoPawns = whiteMaterial - position.moveGeneration.pieceList.getPieces(PieceList::whiteIndex)[PieceList::pawnIndex].size() * pawnValue;
-    int blackMaterialWithNoPawns = whiteMaterial - position.moveGeneration.pieceList.getPieces(PieceList::blackIndex)[PieceList::pawnIndex].size() * pawnValue;
+    int whiteMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::whiteIndex)[PieceList::pawnIndex].size() * pawnValue;
+    int blackMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::blackIndex)[PieceList::pawnIndex].size() * pawnValue;
 
     float whiteEndgamePhaseWeight = endgamePhaseWeight(whiteMaterialWithNoPawns);
     float blackEndgamePhaseWeight = endgamePhaseWeight(blackMaterialWithNoPawns);
@@ -142,13 +135,13 @@ int AI::evaluate(Board &position)
 //     return 0;
 // }
 
-int AI::evaluatePieceSquareTables(Board &position, int colorIndex, float endgamePhaseWeight)
+int AI::evaluatePieceSquareTables(Board *position, int colorIndex, float endgamePhaseWeight)
 {
 
     int value = 0;
     bool isWhite = colorIndex == PieceList::whiteIndex;
-    auto pieces = position.moveGeneration.pieceList.getPieces(colorIndex);
-    Piece *king = position.getKing(colorIndex);
+    auto pieces = position->pieceList.getPieces(colorIndex);
+    Piece *king = position->getKing(colorIndex);
     value += evaluatePieceSquareTable(PieceSquareTable::pawns, pieces[PieceList::pawnIndex], isWhite);
     value += evaluatePieceSquareTable(PieceSquareTable::rooks, pieces[PieceList::rookIndex], isWhite);
     value += evaluatePieceSquareTable(PieceSquareTable::knights, pieces[PieceList::knightIndex], isWhite);
@@ -178,9 +171,9 @@ float AI::endgamePhaseWeight(int materialWithNoPawns)
     return 1 - std::min(1.0f, (materialWithNoPawns * multiplier));
 }
 
-int AI::countMaterial(Board &position, int pieceIndex)
+int AI::countMaterial(Board *position, int pieceIndex)
 {
-    auto pieces = position.moveGeneration.pieceList.getPieces(pieceIndex);
+    auto pieces = position->pieceList.getPieces(pieceIndex);
     int material = 0;
     material += pieces[PieceList::pawnIndex].size() * pawnValue;
     material += pieces[PieceList::knightIndex].size() * knightValue;
@@ -190,41 +183,32 @@ int AI::countMaterial(Board &position, int pieceIndex)
     return material;
 }
 
-std::vector<Move> AI::orderMoves(std::map<int, std::vector<Move>> &moveTable, Board &position)
+void AI::orderMoves(std::vector<Move> &moveTable, Board *position)
 {
-    std::vector<Move> moves;
     std::vector<int> scores;
-    for (const auto &[key, moveList] : moveTable)
+
+    for (const auto &move : moveTable)
     {
-        if (moveList.empty())
-            continue;
-
-        for (const auto &move : moveList)
+        int moveScoreGuess = 0;
+        int movePieceType = position->getBoard()[move.start]->getPiece()->getPieceType();
+        if (!position->getBoard()[move.target]->hasNullPiece())
         {
-            int moveScoreGuess = 0;
-            int movePieceType = position.getBoard()[move.start]->getPiece()->getPieceType();
-            if (!position.getBoard()[move.target]->hasNullPiece())
-            {
-                int targetPiece = position.getBoard()[move.target]->getPiece()->getPieceType();
-                moveScoreGuess += 10 * getPieceValue(targetPiece) - getPieceValue(movePieceType);
-            }
-            if (move.pawnPromotion)
-            {
-                moveScoreGuess += 10;
-            }
-            if (move.isCastle)
-            {
-                moveScoreGuess += 10;
-            }
-
-            moves.push_back(move);
-            scores.push_back(moveScoreGuess);
+            int targetPiece = position->getBoard()[move.target]->getPiece()->getPieceType();
+            moveScoreGuess += 10 * getPieceValue(targetPiece) - getPieceValue(movePieceType);
         }
-    }
-    sortMoves(moves, scores);
-    return moves;
-}
+        if (move.pawnPromotion)
+        {
+            moveScoreGuess += 10;
+        }
+        if (move.isCastle)
+        {
+            moveScoreGuess += 50;
+        }
 
+        scores.push_back(moveScoreGuess);
+    }
+    sortMoves(moveTable, scores);
+}
 
 void AI::sortMoves(std::vector<Move> &moves, std::vector<int> &weights)
 {

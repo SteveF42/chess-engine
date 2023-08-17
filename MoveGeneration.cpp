@@ -1,5 +1,4 @@
 #include "MoveGeneration.hpp"
-#include "Board.hpp"
 
 bool searchVector(std::vector<int> &v, int i)
 {
@@ -53,7 +52,7 @@ std::vector<Move> MoveGeneration::getSlidingTypeMoves(Piece *piece)
 
             if (board[target]->hasNullPiece())
             {
-                if (quietSearch == false) //only generate captures
+                if (quietSearch == false) // only generate captures
                     possibleMoves.push_back(newMove);
             }
             else
@@ -171,18 +170,18 @@ std::vector<Move> MoveGeneration::getPawnMoves(Piece *piece)
         }
     }
     // enPassant moves
-    // if ((!piecePinned || pinDirection == 7 * moveOffset) && currentPosition + attackRight == this->possibleEnPassant)
-    // {
-    //     Move takeRightPassant(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw(), true);
-    //     takeRightPassant.capture = true;
-    //     validMoves.push_back(takeRightPassant);
-    // }
-    // if ((!piecePinned || pinDirection == 9 * moveOffset) && currentPosition + attackLeft == this->possibleEnPassant)
-    // {
-    //     Move takeLeftPassant(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw(), true);
-    //     takeLeftPassant.capture = true;
-    //     validMoves.push_back(takeLeftPassant);
-    // }
+    if ((!piecePinned || pinDirection == 7 * moveOffset) && currentPosition + attackRight == this->possibleEnPassant)
+    {
+        Move takeRightPassant(currentPosition, currentPosition + attackRight, piece->getPieceTypeRaw(), true);
+        takeRightPassant.capture = true;
+        validMoves.push_back(takeRightPassant);
+    }
+    if ((!piecePinned || pinDirection == 9 * moveOffset) && currentPosition + attackLeft == this->possibleEnPassant)
+    {
+        Move takeLeftPassant(currentPosition, currentPosition + attackLeft, piece->getPieceTypeRaw(), true);
+        takeLeftPassant.capture = true;
+        validMoves.push_back(takeLeftPassant);
+    }
 
     return validMoves;
 }
@@ -222,7 +221,7 @@ std::vector<Move> MoveGeneration::getKingMoves(Piece *piece)
             if (otherPieceColor == currentPieceColor)
                 continue;
         }
-        //quiet search only generates captures
+        // quiet search only generates captures
         if (quietSearch == true && otherPiece == nullptr)
         {
             continue;
@@ -293,7 +292,7 @@ std::vector<Move> MoveGeneration::getKnightMoves(Piece *piece)
         move.pieceType = piece->getPieceTypeRaw();
         if (board[target]->hasNullPiece())
         {
-            if (quietSearch == false) //only generate captures
+            if (quietSearch == false) // only generate captures
                 validMoves.push_back(move);
         }
         else

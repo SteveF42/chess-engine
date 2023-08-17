@@ -46,12 +46,12 @@ void GameEngine::update()
             pauseMoves = true;
         }
     }
-    if (gameBoard->moveGeneration.getGameOver())
-    {
-        window->setActive(false);
-        std::cout<<"Game Over " << (gameBoard->getWhiteToMove() ? "Black Wins" : "White Wins") << '\n';
-        return;
-    }
+    // if (gameBoard->moveGeneration.getGameOver())
+    // {
+    //     window->setActive(false);
+    //     std::cout<<"Game Over " << (gameBoard->getWhiteToMove() ? "Black Wins" : "White Wins") << '\n';
+    //     return;
+    // }
 
     window->setSize(sf::Vector2u(1000.f, 1000.f));
     window->clear();
@@ -61,33 +61,33 @@ void GameEngine::update()
     this->drawHighLightedSquare();
     this->drawPieces();
 
-    if (gameBoard->getWhiteToMove())
-    {
-        this->movePiece();
-        window->display();
-    }
-    // this->movePiece();
-    // window->display();
-    else
-    {
-        window->display();
-        if (!pauseMoves)
-        {
+    // if (gameBoard->getWhiteToMove())
+    // {
+    //     this->movePiece();
+    //     window->display();
+    // }
+    this->movePiece();
+    window->display();
+    // else
+    // {
+    //     window->display();
+    //     if (!pauseMoves)
+    //     {
 
-            // since AI is a static class I have to manually initialize the bestmove here which is bad
-            AI::bestMove = Move();
-            AI::positions = 0;
-            int eval = AI::minimax(*gameBoard);
-            std::cout << "Positions evaluated: " << AI::positions << '\n';
-            Move &bestMove = AI::bestMove;
-            lastMove = bestMove;
-            if (bestMove.start != bestMove.target)
-            {
-                gameBoard->makeMove(bestMove);
-                gameBoard->moveGeneration.generateMovesInCurrentPosition();
-            }
-        }
-    }
+    //         // since AI is a static class I have to manually initialize the bestmove here which is bad
+    //         AI::bestMove = Move();
+    //         AI::positions = 0;
+    //         int eval = AI::minimax(*gameBoard);
+    //         std::cout << "Positions evaluated: " << AI::positions << '\n';
+    //         Move &bestMove = AI::bestMove;
+    //         lastMove = bestMove;
+    //         if (bestMove.start != bestMove.target)
+    //         {
+    //             gameBoard->makeMove(bestMove);
+    //             gameBoard->moveGeneration.generateMoves(gameBoard);
+    //         }
+    //     }
+    // }
 }
 
 void GameEngine::placePiece(std::string s)
@@ -128,7 +128,7 @@ void GameEngine::placePiece(std::string s)
         placed = true;
         pauseMoves = false;
         // I have to break out the generate moves function from the board class to take into account the potential pawn promotion
-        gameBoard->moveGeneration.generateMovesInCurrentPosition();
+        gameBoard->moveGeneration.generateMoves(gameBoard);
     }
     else
     {

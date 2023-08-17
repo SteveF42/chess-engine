@@ -1,8 +1,9 @@
 #ifndef Board_H
 #define Board_H
-#include "ReadFen.hpp"
-#include "MoveGeneration.hpp"
+#include "PieceList.hpp"
+#include "Square.hpp"
 #include "Move.hpp"
+#include "NewMoveGenerator.hpp"
 #include <string>
 #include <stack>
 
@@ -17,11 +18,13 @@ struct CastlingRights
 class Board
 {
 private:
-    std::stack<std::map<int, std::vector<Move>>> movesetHistory;
+    std::stack<std::vector<Move>> movesetHistory;
     std::stack<Move> moveHistory;
     Square *board[64];
 
     std::stack<CastlingRights> castlingHistory;
+    Piece *blackKing;
+    Piece *whiteKing;
 
     int numSquaresToEdge[64][8];
 
@@ -29,24 +32,16 @@ private:
     void updateCastlingRights(const Move &move);
 
 public:
+
     static bool whiteToMove;
-    Piece *getKing(int colorIndex)
-    {
-        if (colorIndex == PieceList::whiteIndex)
-        {
-            return moveGeneration.getWhiteKing();
-        }
-        else
-        {
-            return moveGeneration.getBlackKing();
-        }
-    }
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     Move unmakeMove();
     void makeMove(Move move);
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);
-    MoveGeneration moveGeneration;
+
+    NewMoveGenerator moveGeneration;
+    PieceList pieceList;
 
     Board()
     {
@@ -54,7 +49,19 @@ public:
         {
             board[i] = new Square(i);
         }
-        moveGeneration.setBoardRef(board);
+    }
+
+    //@colorIndex PieceList index type
+    Piece *getKing(int colorIndex)
+    {
+        if (colorIndex == PieceList::whiteIndex)
+        {
+            return whiteKing;
+        }
+        else
+        {
+            return blackKing;
+        }
     }
 
     Square **getBoard() { return board; }

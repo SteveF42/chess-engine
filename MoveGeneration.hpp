@@ -5,6 +5,7 @@
 #include "Move.hpp"
 #include "Square.hpp"
 #include "PieceList.hpp"
+#include "Board.hpp"
 
 struct CheckOrPin
 {
@@ -53,6 +54,8 @@ private:
     Piece *blackKing;
     Piece *whiteKing;
 
+    Board *position;
+
 public:
     bool blackCastleKingSide = false;
     bool whiteCastleKingSide = false;
@@ -69,10 +72,7 @@ public:
     void setblackKing(Piece *king) { blackKing = king; }
     Piece *getWhiteKing() { return whiteKing; }
     Piece *getBlackKing() { return blackKing; }
-    bool getGameOver()
-    {
-        return moveset.size() == 0;
-    }
+
 
     void setBoardRef(Square **boardRef)
     {
@@ -82,6 +82,8 @@ public:
     int getPossibleEnPassant() { return possibleEnPassant; }
 
     MoveGeneration() {}
+
+    void calculateAttackData();
 };
 
 #endif

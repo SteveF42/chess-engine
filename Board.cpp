@@ -1,7 +1,6 @@
 #include "Board.hpp"
 #include <vector>
 #include <iostream>
-#include "GameEngine.hpp"
 
 bool Board::whiteToMove;
 
@@ -12,14 +11,23 @@ void Board::setWhiteCastleQueenSide(bool t) { moveGeneration.whiteCastleQueenSid
 
 std::vector<Move> Board::getPieceMoves(int idx)
 {
-    return moveGeneration.getMoves()[idx];
+    std::vector<Move> pieceMoves;
+
+    for (auto &move : moveGeneration.getMoves())
+    {
+        if (move.start == idx)
+        {
+            pieceMoves.push_back(move);
+        }
+    }
+    return pieceMoves;
 }
 
 bool Board::validateMove(int startIdx, int target)
 {
-    for (auto &move : getPieceMoves(startIdx))
+    for (auto &move : moveGeneration.getMoves())
     {
-        if (move.target == target)
+        if (move.target == target && move.start == startIdx)
         {
             this->makeMove(move);
             return true;
@@ -38,11 +46,12 @@ void Board::makeMove(Move move)
     int endRank = move.target / 8;
 
     // capture
-    if (move.capture && !move.isEnPassant)
+    if (!endSquare->hasNullPiece() && !move.isEnPassant)
     {
         Piece *capturedPiece = endSquare->getPiece();
         move.capturedPiece = capturedPiece;
-        moveGeneration.pieceList.removePiece(capturedPiece);
+        pieceList.removePiece(capturedPiece);
+        move.capture = true;
 
         if (capturedPiece->getPieceType() == Piece::ROOK)
         {
@@ -81,16 +90,16 @@ void Board::makeMove(Move move)
         offset = offset * perspective;
         Piece *pawn = board[move.start + offset]->getPiece();
         move.capturedPiece = pawn;
-        moveGeneration.pieceList.removePiece(pawn);
+        pieceList.removePiece(pawn);
         board[move.start + offset]->setPiece(nullptr);
     }
     // pawn promotion
     if (piece->getPieceType() == Piece::PAWN && move.pawnPromotion)
     {
-        moveGeneration.pieceList.removePiece(piece);
+        pieceList.removePiece(piece);
         piece->promoteType(Piece::QUEEN);
         // removes it from the pawn list and adds it to it to its corresponding pieceList
-        moveGeneration.pieceList.addPiece(piece);
+        pieceList.addPiece(piece);
     }
     // castle move
     if (move.isCastle)
@@ -153,9 +162,9 @@ Move Board::unmakeMove()
     Square *target = board[move.target];
     Square *start = board[move.start];
     Piece *movedPiece = target->getPiece();
-    
+
     whiteToMove = !whiteToMove;
-    int perspective = whiteToMove ?  1 : -1;
+    int perspective = whiteToMove ? 1 : -1;
 
     // moves piece back to original square
     movedPiece->setPiecePosition(move.start);
@@ -167,7 +176,7 @@ Move Board::unmakeMove()
     {
         Piece *capturedPiece = move.capturedPiece;
         target->setPiece(capturedPiece);
-        moveGeneration.pieceList.addPiece(capturedPiece);
+        pieceList.addPiece(capturedPiece);
     }
     // en passant move
     else if (move.isEnPassant)
@@ -175,14 +184,14 @@ Move Board::unmakeMove()
         int offset = std::abs(move.start - move.target) == 9 ? -1 : 1;
         offset = offset * perspective;
         board[move.start + offset]->setPiece(move.capturedPiece);
-        moveGeneration.pieceList.addPiece(move.capturedPiece);
+        pieceList.addPiece(move.capturedPiece);
     }
     // pawn promotion
     if (move.pawnPromotion)
     {
-        moveGeneration.pieceList.removePiece(movedPiece);
+        pieceList.removePiece(movedPiece);
         movedPiece->promoteType(Piece::PAWN);
-        moveGeneration.pieceList.addPiece(movedPiece);
+        pieceList.addPiece(movedPiece);
     }
     // castle move
     if (move.isCastle)
@@ -262,17 +271,17 @@ void Board::setSquarePiece(int idx, Piece *other)
 {
     bool isWhite = other->getPieceColor() == Piece::WHITE;
     board[idx]->setPiece(other);
-    moveGeneration.pieceList.addPiece(other);
+    pieceList.addPiece(other);
 
     if (other->getPieceType() == Piece::KING)
     {
         if (isWhite)
         {
-            moveGeneration.setWhiteKing(other);
+            whiteKing = other;
         }
         else
         {
-            moveGeneration.setblackKing(other);
+            blackKing = other;
         }
     }
 }
