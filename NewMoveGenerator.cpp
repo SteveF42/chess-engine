@@ -107,7 +107,7 @@ void NewMoveGenerator::getCastleMoves()
 bool NewMoveGenerator::squareIsAttacked(int square)
 {
     uint64_t attackMapCopy = opponentAttackMap;
-    return ((attackMapCopy >> square) & 1) != 0;
+    return ((opponentAttackMap >> square) & 1) != 0;
 }
 
 bool NewMoveGenerator::squareIsInCheckRay(int square)
@@ -147,7 +147,7 @@ void NewMoveGenerator::calculateAttackData()
         for (int i = 0; i < n; i++)
         {
             int squareIndex = friendlyKing->getPiecePosition() + directionOffset * (i + 1);
-            rayMask |= 1ul << squareIndex;
+            rayMask |= (uint64_t)1 << squareIndex;
             Piece *piece = board->getBoard()[squareIndex]->getPiece();
 
             // This square contains a piece
@@ -219,7 +219,7 @@ void NewMoveGenerator::calculateAttackData()
             isKnightCheck = true;
             inDoubleCheck = inCheck; // if already in check, then this is double check
             inCheck = true;
-            checkRayBitmask |= 1ul << startSquare;
+            checkRayBitmask |= (uint64_t)1 << startSquare;
         }
     }
 
@@ -239,7 +239,7 @@ void NewMoveGenerator::calculateAttackData()
             isPawnCheck = true;
             inDoubleCheck = inCheck; // if already in check, then this is double check
             inCheck = true;
-            checkRayBitmask |= 1ul << pawnSquare;
+            checkRayBitmask |= (uint64_t)1 << pawnSquare;
         }
     }
 
@@ -281,7 +281,7 @@ void NewMoveGenerator::updateSlidingAttackPiece(int startSquare, int startDirInd
         {
             int targetSquare = startSquare + currentDirOffset * (n + 1);
             Piece *targetSquarePiece = board->getBoard()[targetSquare]->getPiece();
-            opponentSlidingAttackMap |= 1ul << targetSquare;
+            opponentSlidingAttackMap |= (uint64_t)1 << targetSquare;
             if (targetSquare != friendlyKing->getPiecePosition())
             {
                 if (targetSquarePiece != nullptr)
@@ -499,17 +499,17 @@ void NewMoveGenerator::generatePawnMoves()
                     }
                     else
                     {
-                        moves.push_back(Move(startSquare, targetSquare, targetPiece->getPieceTypeRaw()));
+                        moves.push_back(Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw()));
                     }
                 }
 
                 // Capture en-passant
                 if (targetSquare == possibleEnPassant)
                 {
-                    int epCapturedPawnSquare = targetSquare + ((board->whiteToMove) ? 8 : -8);
+                    int epCapturedPawnSquare = targetSquare + ((Board::whiteToMove) ? 8 : -8);
                     if (!inCheckAfterEnPassant(startSquare, targetSquare, epCapturedPawnSquare))
                     {
-                        moves.push_back(Move(startSquare, targetSquare, targetPiece->getPieceTypeRaw(), true));
+                        moves.push_back(Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw(), true));
                     }
                 }
             }
@@ -520,9 +520,10 @@ void NewMoveGenerator::generatePawnMoves()
 bool NewMoveGenerator::inCheckAfterEnPassant(int startSquare, int targetSquare, int epCapturedPawnSquare)
 {
     // Update board to reflect en-passant capture
-    board->getBoard()[targetSquare]->setPiece(board->getBoard()[startSquare]->getPiece());
-    board->getBoard()[startSquare]->setPiece(nullptr);
+    Piece* movedPawn = board->getBoard()[startSquare]->getPiece();
     Piece *capturedPawn = board->getBoard()[epCapturedPawnSquare]->getPiece();
+    board->getBoard()[targetSquare]->setPiece(movedPawn);
+    board->getBoard()[startSquare]->setPiece(nullptr);
     board->getBoard()[epCapturedPawnSquare]->setPiece(nullptr);
 
     bool inCheckAfterEpCapture = false;
@@ -532,7 +533,7 @@ bool NewMoveGenerator::inCheckAfterEnPassant(int startSquare, int targetSquare, 
     }
 
     // Undo change to board
-    board->getBoard()[startSquare]->setPiece(board->getBoard()[targetSquare]->getPiece());
+    board->getBoard()[startSquare]->setPiece(movedPawn);
     board->getBoard()[targetSquare]->setPiece(nullptr);
     board->getBoard()[epCapturedPawnSquare]->setPiece(capturedPawn);
     return inCheckAfterEpCapture;
@@ -547,7 +548,7 @@ bool NewMoveGenerator::squareAttackedAfterEPCapture(int epCaptureSquare, int cap
     }
 
     // Loop through the horizontal direction towards ep capture to see if any enemy piece now attacks king
-    int dirIndex = (epCaptureSquare < friendlyKingSquare) ? 2 : 3;
+    int dirIndex = (epCaptureSquare < friendlyKingSquare) ? 1 : 0;
     for (int i = 0; i < preComputedMoveData.numSquaresToEdge[friendlyKingSquare][dirIndex]; i++)
     {
         int squareIndex = friendlyKingSquare + preComputedMoveData.directionOffsets[dirIndex] * (i + 1);

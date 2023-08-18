@@ -46,7 +46,7 @@ PrecomputedMoveData::PrecomputedMoveData()
                 if (maxCoordMoveDst == 2)
                 {
                     legalKnightJumps.push_back((uint8_t)knightJumpSquare);
-                    knightBitboard |= 1ul << knightJumpSquare;
+                    knightBitboard |= (uint64_t)1 << knightJumpSquare;
                 }
             }
         }
@@ -67,7 +67,7 @@ PrecomputedMoveData::PrecomputedMoveData()
                 if (maxCoordMoveDst == 1)
                 {
                     legalKingMoves.push_back((uint8_t)kingMoveSquare);
-                    kingAttackBitboards[squareIndex] |= 1ul << kingMoveSquare;
+                    kingAttackBitboards[squareIndex] |= (uint64_t)1 << kingMoveSquare;
                 }
             }
         }
@@ -78,22 +78,22 @@ PrecomputedMoveData::PrecomputedMoveData()
         {
             if (rank < 7)
             {
-                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] = 1ul << (squareIndex - 9);
+                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] = (uint64_t)1 << (squareIndex - 9);
             }
             if (rank > 0)
             {
-                pawnAttackBitboards[squareIndex][PieceList::blackIndex] = 1ul << (squareIndex + 7);
+                pawnAttackBitboards[squareIndex][PieceList::blackIndex] = (uint64_t)1 << (squareIndex + 7);
             }
         }
         if (file < 7)
         {
             if (rank < 7)
             {
-                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] = 1ul << (squareIndex - 7);
+                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] = (uint64_t)1 << (squareIndex - 7);
             }
             if (rank > 0)
             {
-                pawnAttackBitboards[squareIndex][PieceList::blackIndex] = 1ul << (squareIndex + 9);
+                pawnAttackBitboards[squareIndex][PieceList::blackIndex] = (uint64_t)1 << (squareIndex + 9);
             }
         }
 
@@ -104,7 +104,7 @@ PrecomputedMoveData::PrecomputedMoveData()
             for (int n = 0; n < numSquaresToEdge[squareIndex][directionIndex]; n++)
             {
                 int targetSquare = squareIndex + currentDirOffset * (n + 1);
-                rookMoves[squareIndex] |= 1ul << targetSquare;
+                rookMoves[squareIndex] |= (uint64_t)1 << targetSquare;
             }
         }
         // Bishop moves
@@ -114,7 +114,7 @@ PrecomputedMoveData::PrecomputedMoveData()
             for (int n = 0; n < numSquaresToEdge[squareIndex][directionIndex]; n++)
             {
                 int targetSquare = squareIndex + currentDirOffset * (n + 1);
-                bishopMoves[squareIndex] |= 1ul << targetSquare;
+                bishopMoves[squareIndex] |= (uint64_t)1 << targetSquare;
             }
         }
         queenMoves[squareIndex] = rookMoves[squareIndex] | bishopMoves[squareIndex];
