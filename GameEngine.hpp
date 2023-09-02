@@ -46,8 +46,8 @@ public:
         loadTextures();
         loadSprites();
         gameBoard->moveGeneration.generateMoves(gameBoard);
-        // int positions = AI::moveGenerationTest(5, *gameBoard);
-        // std::cout << "Positions evaluated: " << positions;
+        int positions = AI::moveGenerationTest(5, gameBoard);
+        std::cout << "Positions evaluated: " << positions;
     }
 
     bool isActive() { return window->isOpen(); }

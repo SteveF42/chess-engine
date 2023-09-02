@@ -3,6 +3,16 @@
 
 Move AI::bestMove;
 int AI::positions;
+Board* AI::position;
+
+void AI::generateBestMove(Board *ref)
+{
+    position = ref;
+    bestMove = Move();
+    positions = 0;
+
+    minimax();
+}
 
 long AI::moveGenerationTest(int depth, Board *position)
 {
@@ -22,15 +32,15 @@ long AI::moveGenerationTest(int depth, Board *position)
     return numPositions;
 }
 
-int AI::minimax(Board *position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
+int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
-        return searchCaptures(position, alpha, beta);
+        return searchCaptures(alpha, beta);
 
     positions++;
 
     auto moves = position->moveGeneration.generateMoves(position);
-    orderMoves(moves, position);
+    orderMoves(moves);
 
     if (moves.empty())
     {
@@ -44,7 +54,7 @@ int AI::minimax(Board *position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINIT
     for (const auto &move : moves)
     {
         position->makeMove(move);
-        int eval = -minimax(position, depth - 1, -beta, -alpha);
+        int eval = -minimax(depth - 1, -beta, -alpha);
         position->unmakeMove();
         // opponent had a better move so don't use it
         if (eval >= beta)
@@ -65,21 +75,21 @@ int AI::minimax(Board *position, int depth /*= MAXDEPTH*/, int alpha /*=-INFINIT
     return alpha;
 }
 
-int AI::searchCaptures(Board *position, int alpha, int beta)
+int AI::searchCaptures(int alpha, int beta)
 {
-    int eval = evaluate(position);
+    int eval = evaluate();
     AI::positions++;
 
     if (eval >= beta)
         return beta;
     alpha = std::max(alpha, eval);
 
-    auto captures = position->moveGeneration.generateMoves(position,false);
+    auto captures = position->moveGeneration.generateMoves(position, false);
 
     for (auto &capture : captures)
     {
         position->makeMove(capture);
-        eval = -searchCaptures(position, -beta, -alpha);
+        eval = -searchCaptures(-beta, -alpha);
         position->unmakeMove();
 
         if (eval >= beta)
@@ -89,13 +99,13 @@ int AI::searchCaptures(Board *position, int alpha, int beta)
     return alpha;
 }
 
-int AI::evaluate(Board *position)
+int AI::evaluate()
 {
     int whiteEval = 0;
     int blackEval = 0;
 
-    int whiteMaterial = countMaterial(position, PieceList::whiteIndex);
-    int blackMaterial = countMaterial(position, PieceList::blackIndex);
+    int whiteMaterial = countMaterial(PieceList::whiteIndex);
+    int blackMaterial = countMaterial(PieceList::blackIndex);
 
     int whiteMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::whiteIndex)[PieceList::pawnIndex].size() * pawnValue;
     int blackMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::blackIndex)[PieceList::pawnIndex].size() * pawnValue;
@@ -106,8 +116,8 @@ int AI::evaluate(Board *position)
     whiteEval += whiteMaterial;
     blackEval += blackMaterial;
 
-    whiteEval += evaluatePieceSquareTables(position, PieceList::whiteIndex, blackEndgamePhaseWeight);
-    blackEval += evaluatePieceSquareTables(position, PieceList::blackIndex, whiteEndgamePhaseWeight);
+    whiteEval += evaluatePieceSquareTables(PieceList::whiteIndex, blackEndgamePhaseWeight);
+    blackEval += evaluatePieceSquareTables(PieceList::blackIndex, whiteEndgamePhaseWeight);
 
     // mess with this some other day
     //  whiteEval += mopUpEval(PieceList::whiteIndex, PieceList::blackIndex, whiteMaterial, blackMaterial, blackEndgamePhaseWeight);
@@ -135,7 +145,7 @@ int AI::evaluate(Board *position)
 //     return 0;
 // }
 
-int AI::evaluatePieceSquareTables(Board *position, int colorIndex, float endgamePhaseWeight)
+int AI::evaluatePieceSquareTables(int colorIndex, float endgamePhaseWeight)
 {
 
     int value = 0;
@@ -171,7 +181,7 @@ float AI::endgamePhaseWeight(int materialWithNoPawns)
     return 1 - std::min(1.0f, (materialWithNoPawns * multiplier));
 }
 
-int AI::countMaterial(Board *position, int pieceIndex)
+int AI::countMaterial(int pieceIndex)
 {
     auto pieces = position->pieceList.getPieces(pieceIndex);
     int material = 0;
@@ -183,7 +193,7 @@ int AI::countMaterial(Board *position, int pieceIndex)
     return material;
 }
 
-void AI::orderMoves(std::vector<Move> &moveTable, Board *position)
+void AI::orderMoves(std::vector<Move> &moveTable)
 {
     std::vector<int> scores;
 

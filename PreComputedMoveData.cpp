@@ -39,10 +39,10 @@ PrecomputedMoveData::PrecomputedMoveData()
             int knightJumpSquare = squareIndex + allKnightJumps[i];
             if (knightJumpSquare >= 0 && knightJumpSquare < 64)
             {
-                int knightSquareY = knightJumpSquare / 8;
-                int knightSquareX = knightJumpSquare - knightSquareY * 8;
+                int knightSquareRank = knightJumpSquare / 8;
+                int knightSquareFile = knightJumpSquare % 8;
                 // Ensure knight has moved max of 2 squares on x/y axis (to reject indices that have wrapped around side of board)
-                int maxCoordMoveDst = std::max(std::abs(file - knightSquareX), std::abs(rank - knightSquareY));
+                int maxCoordMoveDst = std::max(std::abs(rank - knightSquareRank), std::abs(file - knightSquareFile));
                 if (maxCoordMoveDst == 2)
                 {
                     legalKnightJumps.push_back((uint8_t)knightJumpSquare);
@@ -55,22 +55,24 @@ PrecomputedMoveData::PrecomputedMoveData()
 
         // Calculate all squares king can move to from current square (not including castling)
         std::vector<uint8_t> legalKingMoves;
+        uint64_t kingBitBoard = 0;
         for (int i = 0; i < 8; i++)
         {
             int kingMoveSquare = squareIndex + directionOffsets[i];
             if (kingMoveSquare >= 0 && kingMoveSquare < 64)
             {
-                int kingSquareY = kingMoveSquare / 8;
-                int kingSquareX = kingMoveSquare % 8;
+                int kingSquareRank = kingMoveSquare / 8;
+                int kingSquareFile = kingMoveSquare % 8;
                 // Ensure king has moved max of 1 square on x/y axis (to reject indices that have wrapped around side of board)
-                int maxCoordMoveDst = std::max(std::abs(file - kingSquareX), std::abs(rank - kingSquareY));
+                int maxCoordMoveDst = std::max(std::abs(rank - kingSquareRank), std::abs(file - kingSquareFile));
                 if (maxCoordMoveDst == 1)
                 {
                     legalKingMoves.push_back((uint8_t)kingMoveSquare);
-                    kingAttackBitboards[squareIndex] |= (uint64_t)1 << kingMoveSquare;
+                    kingBitBoard |= (uint64_t)1 << kingMoveSquare;
                 }
             }
         }
+        kingAttackBitboards[squareIndex] = kingBitBoard;
         kingMoves[squareIndex] = legalKingMoves;
 
         // Calculate legal pawn captures for white and black
@@ -78,22 +80,22 @@ PrecomputedMoveData::PrecomputedMoveData()
         {
             if (rank < 7)
             {
-                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] = (uint64_t)1 << (squareIndex - 9);
+                pawnAttackBitboards[squareIndex][PieceList::blackIndex] |= (uint64_t)1 << (squareIndex + 7);
             }
             if (rank > 0)
             {
-                pawnAttackBitboards[squareIndex][PieceList::blackIndex] = (uint64_t)1 << (squareIndex + 7);
+                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] |= (uint64_t)1 << (squareIndex - 9);
             }
         }
         if (file < 7)
         {
             if (rank < 7)
             {
-                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] = (uint64_t)1 << (squareIndex - 7);
+                pawnAttackBitboards[squareIndex][PieceList::blackIndex] |= (uint64_t)1 << (squareIndex + 9);
             }
             if (rank > 0)
             {
-                pawnAttackBitboards[squareIndex][PieceList::blackIndex] = (uint64_t)1 << (squareIndex + 9);
+                pawnAttackBitboards[squareIndex][PieceList::whiteIndex] |= (uint64_t)1 << (squareIndex - 7);
             }
         }
 

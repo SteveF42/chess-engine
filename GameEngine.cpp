@@ -75,9 +75,7 @@ void GameEngine::update()
         {
 
             // since AI is a static class I have to manually initialize the bestmove here which is bad
-            AI::bestMove = Move();
-            AI::positions = 0;
-            int eval = AI::minimax(gameBoard);
+            AI::generateBestMove(gameBoard);
             std::cout << "Positions evaluated: " << AI::positions << '\n';
             Move &bestMove = AI::bestMove;
             lastMove = bestMove;

@@ -106,14 +106,12 @@ void NewMoveGenerator::getCastleMoves()
 
 bool NewMoveGenerator::squareIsAttacked(int square)
 {
-    uint64_t attackMapCopy = opponentAttackMap;
     return ((opponentAttackMap >> square) & 1) != 0;
 }
 
 bool NewMoveGenerator::squareIsInCheckRay(int square)
 {
-    uint64_t rayCopy = checkRayBitmask;
-    return inCheck && ((rayCopy >> square) & 1) != 0;
+    return inCheck && ((checkRayBitmask >> square) & 1) != 0;
 }
 bool NewMoveGenerator::containsSquare(uint64_t bitboard, int square)
 {
