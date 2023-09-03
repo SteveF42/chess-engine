@@ -42,12 +42,12 @@ public:
     int kingDistance[64][64];
     int centreManhattanDistance[64];
 
-    int NumRookMovesToReachSquare(int startSquare, int targetSquare)
+    int numRookMovesToReachSquare(int startSquare, int targetSquare)
     {
         return orthogonalDistance[startSquare][targetSquare];
     }
 
-    int NumKingMovesToReachSquare(int startSquare, int targetSquare)
+    int numKingMovesToReachSquare(int startSquare, int targetSquare)
     {
         return kingDistance[startSquare][targetSquare];
     }

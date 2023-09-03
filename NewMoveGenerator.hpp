@@ -11,6 +11,7 @@ class NewMoveGenerator
 {
 public:
 	std::vector<Move> generateMoves(Board *board, bool includeQuietMoves = true);
+	PrecomputedMoveData preComputedMoveData;
 
 	// Note, this will only return correct value after GenerateMoves() has been called in the current position
 	bool isCheck()
@@ -25,6 +26,7 @@ public:
 	int possibleEnPassant = 999;
 
 	void setMoves(std::vector<Move> moves) { this->moves = moves; }
+	bool containsSquareInPawnAttackMap(int square);
 	std::vector<Move> getMoves() { return moves; }
 	bool getGameOver()
 	{
@@ -32,7 +34,6 @@ public:
 	}
 
 private:
-	PrecomputedMoveData preComputedMoveData;
 	const int slidingMovesOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
 	const int kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
 	const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};

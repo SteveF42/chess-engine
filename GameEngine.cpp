@@ -2,6 +2,7 @@
 #include "GameEngine.hpp"
 #include "AI.hpp"
 
+
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
 // this is very very bad, I really shouldn't be doing it this way
 // I'm too lazy to change it, it works.
@@ -76,7 +77,6 @@ void GameEngine::update()
 
             // since AI is a static class I have to manually initialize the bestmove here which is bad
             AI::generateBestMove(gameBoard);
-            std::cout << "Positions evaluated: " << AI::positions << '\n';
             Move &bestMove = AI::bestMove;
             lastMove = bestMove;
             if (bestMove.start != bestMove.target)
@@ -94,7 +94,7 @@ void GameEngine::placePiece(std::string s)
     sf::Vector2u windowSize = window->getSize();
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     int squarePosition = ((mousePosition.y / (windowSize.y / 8)) * 8) + mousePosition.x / (windowSize.x / 8);
-            int file = squarePosition % 8;
+    int file = squarePosition % 8;
     int rank = squarePosition / 8;
     // validate the move
 

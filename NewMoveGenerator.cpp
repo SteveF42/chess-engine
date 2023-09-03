@@ -103,6 +103,9 @@ void NewMoveGenerator::getCastleMoves()
         }
     }
 }
+bool NewMoveGenerator::containsSquareInPawnAttackMap(int square){
+    return ((opponentPawnAttackMap >> square) & 1) != 0;
+}
 
 bool NewMoveGenerator::squareIsAttacked(int square)
 {
@@ -137,14 +140,14 @@ void NewMoveGenerator::calculateAttackData()
     {
         bool isDiagonal = dir > 3;
 
-        int n = preComputedMoveData.numSquaresToEdge[friendlyKing->getPiecePosition()][dir];
+        int n = preComputedMoveData.numSquaresToEdge[friendlyKingSquare][dir];
         int directionOffset = slidingMovesOffsets[dir];
         bool isFriendlyPieceAlongRay = false;
         uint64_t rayMask = 0;
 
         for (int i = 0; i < n; i++)
         {
-            int squareIndex = friendlyKing->getPiecePosition() + directionOffset * (i + 1);
+            int squareIndex = friendlyKingSquare + directionOffset * (i + 1);
             rayMask |= (uint64_t)1 << squareIndex;
             Piece *piece = board->getBoard()[squareIndex]->getPiece();
 

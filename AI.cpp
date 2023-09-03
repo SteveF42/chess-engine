@@ -1,17 +1,23 @@
 #include "AI.hpp"
 #include "PieceSquareTable.hpp"
+#include <chrono>
+#include <bits/stdc++.h>
 
 Move AI::bestMove;
 int AI::positions;
-Board* AI::position;
+Board *AI::position;
 
 void AI::generateBestMove(Board *ref)
 {
     position = ref;
     bestMove = Move();
     positions = 0;
-
+    clock_t start, stop;
+    start = clock();
     minimax();
+    stop = clock();
+    std::cout << "Positions evaluated: " << AI::positions << '\n';
+    std::cout << "Time for execution: " << std::fixed << double(stop - start) / CLOCKS_PER_SEC << std::setprecision(5) << '\n';
 }
 
 long AI::moveGenerationTest(int depth, Board *position)
@@ -35,9 +41,8 @@ long AI::moveGenerationTest(int depth, Board *position)
 int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
     if (depth == 0)
+        // return evaluate();
         return searchCaptures(alpha, beta);
-
-    positions++;
 
     auto moves = position->moveGeneration.generateMoves(position);
     orderMoves(moves);
@@ -46,7 +51,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
     {
         // being in check is bad and if theres no moves then a stalemate has occurred
         if (position->moveGeneration.isCheck())
-            return -INFINITY;
+            return -AI::INFINITE;
         else
             return 0;
     }
@@ -56,6 +61,9 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
         position->makeMove(move);
         int eval = -minimax(depth - 1, -beta, -alpha);
         position->unmakeMove();
+
+        positions++;
+
         // opponent had a better move so don't use it
         if (eval >= beta)
         {
@@ -69,28 +77,28 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
                 bestMove = move;
             }
         }
-        alpha = std::max(alpha, eval);
     }
 
     return alpha;
 }
 
-int AI::searchCaptures(int alpha, int beta)
+int AI::searchCaptures(int alpha, int beta,int depth)
 {
     int eval = evaluate();
-    AI::positions++;
 
     if (eval >= beta)
         return beta;
     alpha = std::max(alpha, eval);
 
     auto captures = position->moveGeneration.generateMoves(position, false);
+    orderMoves(captures);
 
     for (auto &capture : captures)
     {
         position->makeMove(capture);
-        eval = -searchCaptures(-beta, -alpha);
+        eval = -searchCaptures(-beta, -alpha,depth-1);
         position->unmakeMove();
+        AI::positions++;
 
         if (eval >= beta)
             return beta;
@@ -120,7 +128,8 @@ int AI::evaluate()
     blackEval += evaluatePieceSquareTables(PieceList::blackIndex, whiteEndgamePhaseWeight);
 
     // mess with this some other day
-    //  whiteEval += mopUpEval(PieceList::whiteIndex, PieceList::blackIndex, whiteMaterial, blackMaterial, blackEndgamePhaseWeight);
+    whiteEval += mopUpEval(PieceList::whiteIndex, PieceList::blackIndex, whiteMaterial, blackMaterial, blackEndgamePhaseWeight);
+    blackEval += mopUpEval(PieceList::blackIndex, PieceList::whiteIndex, blackMaterial, whiteMaterial, whiteEndgamePhaseWeight);
 
     int eval = whiteEval - blackEval;
     int perspective = Board::whiteToMove ? 1 : -1;
@@ -128,22 +137,22 @@ int AI::evaluate()
     return eval * perspective;
 }
 
-// int AI::mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight)
-// {
-//     int mopUpScore = 0;
-//     if (myMaterial > opponentMaterial + pawnValue * 2 && endgameWeight > 0)
-//     {
+int AI::mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight)
+{
+    int mopUpScore = 0;
+    if (myMaterial > opponentMaterial + pawnValue * 2 && endgameWeight > 0)
+    {
 
-//         int friendlyKingSquare = board.KingSquare[friendlyIndex];
-//         int opponentKingSquare = board.KingSquare[opponentIndex];
-//         mopUpScore += PrecomputedMoveData.centreManhattanDistance[opponentKingSquare] * 10;
-//         // use ortho dst to promote direct opposition
-//         mopUpScore += (14 - PrecomputedMoveData.NumRookMovesToReachSquare(friendlyKingSquare, opponentKingSquare)) * 4;
+        int friendlyKingSquare = position->getKing(friendlyIndex)->getPiecePosition();
+        int opponentKingSquare = position->getKing(opponentIndex)->getPiecePosition();
+        mopUpScore += position->moveGeneration.preComputedMoveData.centreManhattanDistance[opponentKingSquare] * 10;
+        // use ortho dst to promote direct opposition
+        mopUpScore += (14 - position->moveGeneration.preComputedMoveData.numRookMovesToReachSquare(friendlyKingSquare, opponentKingSquare)) * 4;
 
-//         return (int)(mopUpScore * endgameWeight);
-//     }
-//     return 0;
-// }
+        return (int)(mopUpScore * endgameWeight);
+    }
+    return 0;
+}
 
 int AI::evaluatePieceSquareTables(int colorIndex, float endgamePhaseWeight)
 {
@@ -204,17 +213,20 @@ void AI::orderMoves(std::vector<Move> &moveTable)
         if (!position->getBoard()[move.target]->hasNullPiece())
         {
             int targetPiece = position->getBoard()[move.target]->getPiece()->getPieceType();
-            moveScoreGuess += 10 * getPieceValue(targetPiece) - getPieceValue(movePieceType);
+            moveScoreGuess += 10 * (getPieceValue(targetPiece) - getPieceValue(movePieceType));
         }
         if (move.pawnPromotion)
         {
-            moveScoreGuess += 10;
+            moveScoreGuess += 30;
         }
         if (move.isCastle)
         {
-            moveScoreGuess += 50;
+            moveScoreGuess += 10;
         }
-
+        if (position->moveGeneration.containsSquareInPawnAttackMap(move.target))
+        {
+            moveScoreGuess -= 350;
+        }
         scores.push_back(moveScoreGuess);
     }
     sortMoves(moveTable, scores);
@@ -222,20 +234,26 @@ void AI::orderMoves(std::vector<Move> &moveTable)
 
 void AI::sortMoves(std::vector<Move> &moves, std::vector<int> &weights)
 {
-    for (int i = 1; i < weights.size(); i++)
-    {
-        int j = i - 1;
+    if(moves.size() == 0 && weights.size() == 0){
+        return;
+    }
 
-        while (j >= 0 && weights[i] > weights[i])
+    for (int i = 0; i < weights.size() - 1; i++)
+    {
+        for (int j = i + 1; j > 0; j--)
         {
-            // move the move
-            moves[j + 1] = moves[j];
-            // move the weight
-            weights[j + 1] = weights[j];
-            j--;
+            int swampIndex = j - 1;
+            if (weights[swampIndex] < weights[j])
+            {
+                Move& temp = moves[j];
+                moves[j] = moves[swampIndex];
+                moves[swampIndex] = temp;
+
+                int temp2 = weights[j];
+                weights[j] = weights[swampIndex];
+                weights[swampIndex] = temp2;
+            }
         }
-        moves[j + 1] = moves[i];
-        weights[j + 1] = weights[i];
     }
 }
 
