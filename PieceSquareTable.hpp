@@ -19,6 +19,8 @@ public:
 
     const static int pawns[];
 
+	const static int pawnsEnd[];
+
     const static int knights[];
 
     const static int bishops[];
@@ -30,6 +32,7 @@ public:
     const static int kingMiddle[];
 
     const static int kingEnd[];
+	
 };
 
 const int PieceSquareTable::pawns[] = {
@@ -41,6 +44,16 @@ const int PieceSquareTable::pawns[] = {
 	5, -5,-10,  0,  0,-10, -5,  5,
 	5, 10, 10,-20,-20, 10, 10,  5,
 	0,  0,  0,  0,  0,  0,  0,  0
+};
+const int PieceSquareTable::pawnsEnd[] = {
+	0,   0,   0,   0,   0,   0,   0,   0,
+	80,  80,  80,  80,  80,  80,  80,  80,
+	50,  50,  50,  50,  50,  50,  50,  50,
+	30,  30,  30,  30,  30,  30,  30,  30,
+	20,  20,  20,  20,  20,  20,  20,  20,
+	10,  10,  10,  10,  10,  10,  10,  10,
+	10,  10,  10,  10,  10,  10,  10,  10,
+	0,   0,   0,   0,   0,   0,   0,   0
 };
 
 const int PieceSquareTable::knights[] = {

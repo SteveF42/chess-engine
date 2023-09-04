@@ -28,6 +28,7 @@ private:
     static int searchCaptures(int alpha, int beta);
     static void sortMoves(std::vector<Move> &moves, int* weights);
     static int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
+    static int getMaterialInfo(int colorIndex);
 
 public:
     static Move bestMove;

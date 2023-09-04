@@ -178,8 +178,8 @@ int AI::evaluate()
     int whiteMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::whiteIndex)[PieceList::pawnIndex].size() * pawnValue;
     int blackMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::blackIndex)[PieceList::pawnIndex].size() * pawnValue;
 
-    float whiteEndgamePhaseWeight = endgamePhaseWeight(whiteMaterialWithNoPawns);
-    float blackEndgamePhaseWeight = endgamePhaseWeight(blackMaterialWithNoPawns);
+    float whiteEndgamePhaseWeight = getMaterialInfo(PieceList::whiteIndex);
+    float blackEndgamePhaseWeight = getMaterialInfo(PieceList::blackIndex);
 
     whiteEval += whiteMaterial;
     blackEval += blackMaterial;
@@ -221,14 +221,22 @@ int AI::evaluatePieceSquareTables(int colorIndex, float endgamePhaseWeight)
     bool isWhite = colorIndex == PieceList::whiteIndex;
     auto pieces = position->pieceList.getPieces(colorIndex);
     Piece *king = position->getKing(colorIndex);
-    value += evaluatePieceSquareTable(PieceSquareTable::pawns, pieces[PieceList::pawnIndex], isWhite);
     value += evaluatePieceSquareTable(PieceSquareTable::rooks, pieces[PieceList::rookIndex], isWhite);
     value += evaluatePieceSquareTable(PieceSquareTable::knights, pieces[PieceList::knightIndex], isWhite);
     value += evaluatePieceSquareTable(PieceSquareTable::bishops, pieces[PieceList::bishopIndex], isWhite);
     value += evaluatePieceSquareTable(PieceSquareTable::queens, pieces[PieceList::queenIndex], isWhite);
+
+    int pawnEarly = evaluatePieceSquareTable(PieceSquareTable::pawns, pieces[PieceList::pawnIndex], isWhite);
+    int pawnEnd = evaluatePieceSquareTable(PieceSquareTable::pawnsEnd, pieces[PieceList::pawnIndex], isWhite);
+
+    value += (int)(pawnEarly * (1 - endgamePhaseWeight));
+    value += (int)(pawnEnd * endgamePhaseWeight);
+
     int kingEarlyPhase = PieceSquareTable::read(PieceSquareTable::kingMiddle, king->getPiecePosition(), isWhite);
+    int kingLatePhase = PieceSquareTable::read(PieceSquareTable::kingEnd, king->getPiecePosition(), isWhite);
+
     value += (int)(kingEarlyPhase * (1 - endgamePhaseWeight));
-    // value += PieceSquareTable.Read (PieceSquareTable.kingMiddle, board.KingSquare[colourIndex], isWhite);
+    value += (int)(kingLatePhase * endgamePhaseWeight);
 
     return value;
 }
@@ -278,7 +286,7 @@ void AI::orderMoves(std::vector<Move> &moveTable)
         }
         if (move.pawnPromotion)
         {
-            moveScoreGuess += 30;
+            moveScoreGuess += 500;
         }
         if (move.isCastle)
         {
@@ -318,6 +326,38 @@ void AI::sortMoves(std::vector<Move> &moves, int *weights)
             }
         }
     }
+}
+
+int AI::getMaterialInfo(int colorIndex)
+{
+    auto pieces = position->pieceList.getPieces(colorIndex);
+    int numPawns = pieces[PieceList::pawnIndex].size();
+    int numKnights = pieces[PieceList::knightIndex].size();
+    int numBishops = pieces[PieceList::bishopIndex].size();
+    int numRooks = pieces[PieceList::rookIndex].size();
+    int numQueens = pieces[PieceList::queenIndex].size();
+
+    int numMajors = numRooks + numQueens;
+    int numMinors = numBishops + numKnights;
+
+    int materialScore = 0;
+    materialScore += numPawns * pawnValue;
+    materialScore += numKnights * knightValue;
+    materialScore += numBishops * bishopValue;
+    materialScore += numRooks * rookValue;
+    materialScore += numQueens * queenValue;
+
+    // Endgame Transition (0->1)
+    const int queenEndgameWeight = 45;
+    const int rookEndgameWeight = 20;
+    const int bishopEndgameWeight = 10;
+    const int knightEndgameWeight = 10;
+
+    const int endgameStartWeight = 2 * rookEndgameWeight + 2 * bishopEndgameWeight + 2 * knightEndgameWeight + queenEndgameWeight;
+    int endgameWeightSum = numQueens * queenEndgameWeight + numRooks * rookEndgameWeight + numBishops * bishopEndgameWeight + numKnights * knightEndgameWeight;
+    int endgameT = 1 - std::min(1.0f, (endgameWeightSum / (float)endgameStartWeight));
+
+    return endgameT;
 }
 
 int AI::getPieceValue(int piece)
