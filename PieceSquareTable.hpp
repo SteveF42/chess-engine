@@ -6,10 +6,11 @@ class PieceSquareTable
 public:
     static int read(const int table[], int square, bool isWhite)
     {
-        if (isWhite)
+        if (!isWhite)
         {
-            int file = square / 8;
-            int rank = 7 - (square % 8);
+			// square = 63 - square;
+            int rank = 7 - (square / 8);
+            int file = square % 8;
             square = (rank * 8) + file;
         }
 

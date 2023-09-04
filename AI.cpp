@@ -282,7 +282,7 @@ void AI::orderMoves(std::vector<Move> &moveTable)
         }
         if (move.isCastle)
         {
-            moveScoreGuess += 10;
+            moveScoreGuess += 1000;
         }
         if (position->moveGeneration.containsSquareInPawnAttackMap(move.target))
         {
