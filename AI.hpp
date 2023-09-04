@@ -13,6 +13,7 @@ private:
     const static int queenValue = 900;
     const static int MAXDEPTH = 4;
     const static int INFINITE = 99999999;
+    const static int mateScore = 100000;
 
     static Board *position;
 
@@ -24,9 +25,9 @@ private:
     static int countMaterial(int pieceIndex);
     static void orderMoves(std::vector<Move> &moveTable);
     static int getPieceValue(int piece);
-    static int searchCaptures(int alpha, int beta,int depth = 4);
-    static void sortMoves(std::vector<Move> &moves, std::vector<int> &weights);
-    static int minimax(int depth = MAXDEPTH, int alpha = -INFINITE, int beta = INFINITE);
+    static int searchCaptures(int alpha, int beta);
+    static void sortMoves(std::vector<Move> &moves, int* weights);
+    static int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
 
 public:
     static Move bestMove;

@@ -2,16 +2,59 @@
 #include "PieceSquareTable.hpp"
 #include <chrono>
 #include <bits/stdc++.h>
+#include <thread>
 
 Move AI::bestMove;
 int AI::positions;
 Board *AI::position;
 
+int partition(std::vector<Move> &moves, int *weights, int low, int high)
+{
+    int pivotScore = weights[high];
+    int i = low - 1;
+
+    for (int j = low; j <= high - 1; j++)
+    {
+        if (weights[j] > pivotScore)
+        {
+            i++;
+            Move temp = moves[i];
+            moves[i] = moves[j];
+            moves[j] = temp;
+
+            int temp2 = weights[i];
+            weights[i] = weights[j];
+            weights[j] = temp2;
+        }
+    }
+    Move temp = moves[i + 1];
+    moves[i + 1] = moves[high];
+    moves[high] = temp;
+
+    int temp2 = weights[i + 1];
+    weights[i + 1] = weights[high];
+    weights[high] = temp2;
+
+    return i + 1;
+}
+void quickSort(std::vector<Move> &moves, int *scores, int low, int high)
+{
+    if (low < high)
+    {
+        int pivot = partition(moves, scores, low, high);
+        quickSort(moves, scores, low, pivot - 1);
+        quickSort(moves, scores, pivot + 1, high);
+    }
+}
+
 void AI::generateBestMove(Board *ref)
 {
+
     position = ref;
     bestMove = Move();
     positions = 0;
+    // std::thread searchThread(minimax);
+
     clock_t start, stop;
     start = clock();
     minimax();
@@ -38,8 +81,19 @@ long AI::moveGenerationTest(int depth, Board *position)
     return numPositions;
 }
 
-int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
+int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
+
+    // if (depthFromRoot > 0)
+    // {
+    //     alpha = std::max(alpha, (-mateScore) + depthFromRoot);
+    //     beta = std::min(beta, mateScore - depthFromRoot);
+    //     if (alpha >= beta)
+    //     {
+    //         return alpha;
+    //     }
+    // }
+
     if (depth == 0)
         // return evaluate();
         return searchCaptures(alpha, beta);
@@ -47,11 +101,11 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
     auto moves = position->moveGeneration.generateMoves(position);
     orderMoves(moves);
 
-    if (moves.empty())
+    if (moves.size() == 0)
     {
         // being in check is bad and if theres no moves then a stalemate has occurred
         if (position->moveGeneration.isCheck())
-            return -AI::INFINITE;
+            return -(mateScore - (depthFromRoot));
         else
             return 0;
     }
@@ -59,7 +113,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
     for (const auto &move : moves)
     {
         position->makeMove(move);
-        int eval = -minimax(depth - 1, -beta, -alpha);
+        int eval = -minimax(depth - 1, depthFromRoot + 1, -beta, -alpha);
         position->unmakeMove();
 
         positions++;
@@ -72,7 +126,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
         if (eval > alpha)
         {
             alpha = eval;
-            if (depth == MAXDEPTH)
+            if (depthFromRoot == 0)
             {
                 bestMove = move;
             }
@@ -82,13 +136,16 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int alpha /*=-INFINITY*/, int beta /*=
     return alpha;
 }
 
-int AI::searchCaptures(int alpha, int beta,int depth)
+int AI::searchCaptures(int alpha, int beta)
 {
     int eval = evaluate();
 
     if (eval >= beta)
         return beta;
-    alpha = std::max(alpha, eval);
+    if (eval > alpha)
+    {
+        alpha = eval;
+    }
 
     auto captures = position->moveGeneration.generateMoves(position, false);
     orderMoves(captures);
@@ -96,13 +153,16 @@ int AI::searchCaptures(int alpha, int beta,int depth)
     for (auto &capture : captures)
     {
         position->makeMove(capture);
-        eval = -searchCaptures(-beta, -alpha,depth-1);
+        eval = -searchCaptures(-beta, -alpha);
         position->unmakeMove();
         AI::positions++;
 
         if (eval >= beta)
             return beta;
-        alpha = std::max(alpha, eval);
+        if (eval > alpha)
+        {
+            alpha = eval;
+        }
     }
     return alpha;
 }
@@ -204,7 +264,8 @@ int AI::countMaterial(int pieceIndex)
 
 void AI::orderMoves(std::vector<Move> &moveTable)
 {
-    std::vector<int> scores;
+    int scores[moveTable.size()];
+    int i = 0;
 
     for (const auto &move : moveTable)
     {
@@ -227,25 +288,27 @@ void AI::orderMoves(std::vector<Move> &moveTable)
         {
             moveScoreGuess -= 350;
         }
-        scores.push_back(moveScoreGuess);
+        scores[i++] = moveScoreGuess;
     }
-    sortMoves(moveTable, scores);
+    quickSort(moveTable, scores, 0, moveTable.size() - 1);
+    // sortMoves(moveTable,scores);
 }
 
-void AI::sortMoves(std::vector<Move> &moves, std::vector<int> &weights)
+void AI::sortMoves(std::vector<Move> &moves, int *weights)
 {
-    if(moves.size() == 0 && weights.size() == 0){
+    if (moves.size() == 0)
+    {
         return;
     }
 
-    for (int i = 0; i < weights.size() - 1; i++)
+    for (int i = 0; i < moves.size() - 1; i++)
     {
         for (int j = i + 1; j > 0; j--)
         {
             int swampIndex = j - 1;
             if (weights[swampIndex] < weights[j])
             {
-                Move& temp = moves[j];
+                Move &temp = moves[j];
                 moves[j] = moves[swampIndex];
                 moves[swampIndex] = temp;
 
