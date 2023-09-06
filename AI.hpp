@@ -15,7 +15,11 @@ private:
     const static int INFINITE = 99999999;
     const static int mateScore = 100000;
 
+    const static int TIMEOUT_MILISECONDS = 3000; //10 seconds
     static Board *position;
+    static bool timeout;
+    static Move bestMoveThisIteration;
+    static clock_t timeoutStart;
 
     static int evaluate();
     static float endgamePhaseWeight(int materialCountWithoutPawns);
@@ -29,6 +33,7 @@ private:
     static void sortMoves(std::vector<Move> &moves, int* weights);
     static int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
     static int getMaterialInfo(int colorIndex);
+    static void iterativeDeepening();
 
 public:
     static Move bestMove;

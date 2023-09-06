@@ -7,6 +7,9 @@
 Move AI::bestMove;
 int AI::positions;
 Board *AI::position;
+bool AI::timeout;
+Move AI::bestMoveThisIteration;
+clock_t AI::timeoutStart;
 
 int partition(std::vector<Move> &moves, int *weights, int low, int high)
 {
@@ -56,13 +59,29 @@ void AI::generateBestMove(Board *ref)
     // std::thread searchThread(minimax);
 
     clock_t start, stop;
-    start = clock();
-    minimax();
-    stop = clock();
-    std::cout << "Positions evaluated: " << AI::positions << '\n';
-    std::cout << "Time for execution: " << std::fixed << double(stop - start) / CLOCKS_PER_SEC << std::setprecision(5) << '\n';
+    // minimax();
+    iterativeDeepening();
+    std::cout << "Nodes searched: " << positions;
 }
-
+void AI::iterativeDeepening()
+{
+    timeout = false;
+    timeoutStart = clock();
+    for (int currentDepth = 0; currentDepth < 128; currentDepth++)
+    {
+        if (currentDepth > 0)
+        {
+            bestMoveThisIteration = bestMove;
+            std::cout << "Completed search with depth: " << currentDepth << '\n';
+        }
+        minimax(currentDepth);
+        if (timeout)
+        {
+            bestMove = bestMoveThisIteration;
+            return;
+        }
+    }
+}
 long AI::moveGenerationTest(int depth, Board *position)
 {
     if (depth == 0)
@@ -83,16 +102,20 @@ long AI::moveGenerationTest(int depth, Board *position)
 
 int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
 {
-
-    // if (depthFromRoot > 0)
-    // {
-    //     alpha = std::max(alpha, (-mateScore) + depthFromRoot);
-    //     beta = std::min(beta, mateScore - depthFromRoot);
-    //     if (alpha >= beta)
-    //     {
-    //         return alpha;
-    //     }
-    // }
+    if (clock() - timeoutStart > TIMEOUT_MILISECONDS)
+    {
+        timeout = true;
+        return alpha;
+    }
+    if (depthFromRoot > 0)
+    {
+        alpha = std::max(alpha, (-mateScore) + depthFromRoot);
+        beta = std::min(beta, mateScore - depthFromRoot);
+        if (alpha >= beta)
+        {
+            return alpha;
+        }
+    }
 
     if (depth == 0)
         // return evaluate();
@@ -290,7 +313,7 @@ void AI::orderMoves(std::vector<Move> &moveTable)
         }
         if (move.isCastle)
         {
-            moveScoreGuess += 1000;
+            moveScoreGuess += 1300;
         }
         if (position->moveGeneration.containsSquareInPawnAttackMap(move.target))
         {
@@ -353,9 +376,9 @@ int AI::getMaterialInfo(int colorIndex)
     const int bishopEndgameWeight = 10;
     const int knightEndgameWeight = 10;
 
-    const int endgameStartWeight = 2 * rookEndgameWeight + 2 * bishopEndgameWeight + 2 * knightEndgameWeight + queenEndgameWeight;
-    int endgameWeightSum = numQueens * queenEndgameWeight + numRooks * rookEndgameWeight + numBishops * bishopEndgameWeight + numKnights * knightEndgameWeight;
-    int endgameT = 1 - std::min(1.0f, (endgameWeightSum / (float)endgameStartWeight));
+    const int endgameStartWeight = (2 * rookEndgameWeight) + (2 * bishopEndgameWeight) + (2 * knightEndgameWeight) + (queenEndgameWeight);
+    int endgameWeightSum = (numQueens * queenEndgameWeight) + (numRooks * rookEndgameWeight) + (numBishops * bishopEndgameWeight) + (numKnights * knightEndgameWeight);
+    float endgameT = 1 - std::min(1.0f, (endgameWeightSum / (float)endgameStartWeight));
 
     return endgameT;
 }

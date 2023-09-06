@@ -19,6 +19,7 @@ private:
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
     Board *gameBoard;
     bool pauseMoves = false;
+    bool playAsWhite;
 
     std::map<int, sf::Sprite> pieceSprites;
     Move lastMove = Move(-1, -1, -1);
@@ -40,8 +41,9 @@ public:
     static constexpr float SQUARESIZE = 25.f;
     static std::map<std::string, sf::Texture *> textures;
 
-    GameEngine(std::string fenString)
+    GameEngine(std::string fenString,bool playAsWhite = true)
     {
+        this->playAsWhite = playAsWhite;
         gameBoard = ReadFen::readFenString(fenString);
         loadTextures();
         loadSprites();

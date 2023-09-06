@@ -62,7 +62,7 @@ void GameEngine::update()
     this->drawHighLightedSquare();
     this->drawPieces();
 
-    if (gameBoard->getWhiteToMove())
+    if (gameBoard->getWhiteToMove() == this->playAsWhite)
     {
         this->movePiece();
         window->display();
