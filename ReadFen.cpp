@@ -84,5 +84,8 @@ Board *ReadFen::readFenString(std::string fen)
     newBoard->setWhiteCastleKingSide(sections[2].find("k") != std::string::npos ? true : false);
     newBoard->setWhiteCastleQueenSide(sections[2].find("q") != std::string::npos ? true : false);
 
+    uint64_t zobristKey = newBoard->zobrist.generateZobristKey(newBoard);
+    newBoard->setZobristKey(zobristKey);
+
     return newBoard;
 }

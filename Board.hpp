@@ -4,6 +4,7 @@
 #include "Square.hpp"
 #include "Move.hpp"
 #include "NewMoveGenerator.hpp"
+#include "Zobrist.hpp"
 #include <string>
 #include <stack>
 
@@ -28,11 +29,13 @@ private:
 
     int numSquaresToEdge[64][8];
 
+    uint64_t zobristKey;
+    std::stack<uint64_t> zobristKeyHistory;
+
     // class methods
     void updateCastlingRights(const Move &move);
 
 public:
-
     static bool whiteToMove;
     // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     Move unmakeMove();
@@ -41,6 +44,7 @@ public:
     bool validateMove(int startIdx, int target);
 
     NewMoveGenerator moveGeneration;
+    Zobrist zobrist;
     PieceList pieceList;
 
     Board()
@@ -66,6 +70,7 @@ public:
 
     Square **getBoard() { return board; }
     void setSquarePiece(int idx, Piece *other);
+    void setZobristKey(uint64_t zobrist) { zobristKey = zobrist; }
 
     void setWhiteToMove(bool t) { whiteToMove = t; }
     void setBlackCastleKingSide(bool t);

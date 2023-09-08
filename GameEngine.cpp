@@ -62,30 +62,30 @@ void GameEngine::update()
     this->drawHighLightedSquare();
     this->drawPieces();
 
-    if (gameBoard->getWhiteToMove() == this->playAsWhite)
-    {
-        this->movePiece();
-        window->display();
-    }
-    // this->movePiece();
-    // window->display();
-    else
-    {
-        window->display();
-        if (!pauseMoves)
-        {
+    // if (gameBoard->getWhiteToMove() == this->playAsWhite)
+    // {
+    //     this->movePiece();
+    //     window->display();
+    // }
+    this->movePiece();
+    window->display();
+    // else
+    // {
+    //     window->display();
+    //     if (!pauseMoves)
+    //     {
 
-            // since AI is a static class I have to manually initialize the bestmove here which is bad
-            AI::generateBestMove(gameBoard);
-            Move &bestMove = AI::bestMove;
-            lastMove = bestMove;
-            if (bestMove.start != bestMove.target)
-            {
-                gameBoard->makeMove(bestMove);
-                gameBoard->moveGeneration.generateMoves(gameBoard);
-            }
-        }
-    }
+    //         // since AI is a static class I have to manually initialize the bestmove here which is bad
+    //         AI::generateBestMove(gameBoard);
+    //         Move &bestMove = AI::bestMove;
+    //         lastMove = bestMove;
+    //         if (bestMove.start != bestMove.target)
+    //         {
+    //             gameBoard->makeMove(bestMove);
+    //             gameBoard->moveGeneration.generateMoves(gameBoard);
+    //         }
+    //     }
+    // }
 }
 
 void GameEngine::placePiece(std::string s)

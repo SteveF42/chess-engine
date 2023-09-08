@@ -12,6 +12,7 @@ class NewMoveGenerator
 public:
 	std::vector<Move> generateMoves(Board *board, bool includeQuietMoves = true);
 	PrecomputedMoveData preComputedMoveData;
+	const static int noEnPessant = -1;
 
 	// Note, this will only return correct value after GenerateMoves() has been called in the current position
 	bool isCheck()
@@ -23,7 +24,7 @@ public:
 	bool whiteCastleKingSide = false;
 	bool blackCastleQueenSide = false;
 	bool whiteCastleQueenSide = false;
-	int possibleEnPassant = 999;
+	int possibleEnPassant = noEnPessant;
 
 	void setMoves(std::vector<Move> moves) { this->moves = moves; }
 	bool containsSquareInPawnAttackMap(int square);

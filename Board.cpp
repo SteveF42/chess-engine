@@ -41,9 +41,24 @@ void Board::makeMove(Move move)
     Square *startSquare = board[move.start];
     Square *endSquare = board[move.target];
     Piece *piece = startSquare->getPiece();
+    int colorIndex = piece->getPieceColor() == Piece::WHITE ? PieceList::whiteIndex : PieceList::blackIndex;
+    int opponentIndex = 1 - colorIndex;
+    int movedPieceType = piece->getPieceType();
+
+    int oldEnPessentSquare = moveGeneration.possibleEnPassant;
+    int originalType = piece->getPieceType();
+    int originalPosition = piece->getPiecePosition();
     int perspective = whiteToMove ? 1 : -1;
     int startRank = move.start / 8;
     int endRank = move.target / 8;
+
+    zobristKeyHistory.push(zobristKey);
+
+    CastlingRights oldRights;
+    oldRights.blackCastleKingSide = moveGeneration.blackCastleKingSide;
+    oldRights.blackCastleQueenSide = moveGeneration.blackCastleQueenSide;
+    oldRights.whiteCastleKingSide = moveGeneration.whiteCastleKingSide;
+    oldRights.whiteCastleQueenSide = moveGeneration.whiteCastleQueenSide;
 
     // capture
     if (!endSquare->hasNullPiece() && !move.isEnPassant)
@@ -52,6 +67,8 @@ void Board::makeMove(Move move)
         move.capturedPiece = capturedPiece;
         pieceList.removePiece(capturedPiece);
         move.capture = true;
+        // remove captured piece from zobrist key
+        zobristKey ^= zobrist.getPieceHash(capturedPiece->getPieceType(), opponentIndex, move.target);
 
         if (capturedPiece->getPieceType() == Piece::ROOK)
         {
@@ -92,6 +109,9 @@ void Board::makeMove(Move move)
         move.capturedPiece = pawn;
         pieceList.removePiece(pawn);
         board[move.start + offset]->setPiece(nullptr);
+
+        //remove pawn from key
+        zobristKey ^= zobrist.getPieceHash(pawn->getPieceType(), opponentIndex, move.start + offset);
     }
     // pawn promotion
     if (piece->getPieceType() == Piece::PAWN && move.pawnPromotion)
@@ -108,17 +128,31 @@ void Board::makeMove(Move move)
         int endFile = move.target % 8;
         if (endFile - startFile == 2) // kingside castle
         {
-            Piece *rook = board[move.target + 1]->getPiece();
-            rook->setPiecePosition(move.target - 1);
-            board[move.target - 1]->setPiece(rook);
-            board[move.target + 1]->setPiece(nullptr);
+            int from = move.target + 1;
+            int to = move.target - 1;
+            Piece *rook = board[from]->getPiece();
+
+            rook->setPiecePosition(to);
+            board[to]->setPiece(rook);
+            board[from]->setPiece(nullptr);
+            // remove rook original position
+            zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, from);
+            // add new rook position
+            zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, to);
         }
         else // queen side castle
         {
-            Piece *rook = board[move.target - 2]->getPiece();
-            rook->setPiecePosition(move.target + 1);
-            board[move.target - 2]->setPiece(nullptr);
-            board[move.target + 1]->setPiece(rook);
+            int from = move.target - 2;
+            int to = move.target + 1;
+            Piece *rook = board[from]->getPiece();
+            rook->setPiecePosition(to);
+            board[from]->setPiece(nullptr);
+            board[to]->setPiece(rook);
+
+            // remove original rook position
+            zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, from);
+            // add new rook position
+            zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, to);
         }
     }
 
@@ -127,22 +161,42 @@ void Board::makeMove(Move move)
     {
         moveGeneration.possibleEnPassant = (move.start + move.target) / 2;
         move.possibleEnPassant = moveGeneration.possibleEnPassant;
+        zobristKey ^= zobrist.getEnPessentFile(move.possibleEnPassant);
     }
     else
     {
-        moveGeneration.possibleEnPassant = -1;
-        move.possibleEnPassant = -1;
+        moveGeneration.possibleEnPassant = moveGeneration.noEnPessant;
+        move.possibleEnPassant = moveGeneration.noEnPessant;
     }
 
-    CastlingRights oldRights;
-    oldRights.blackCastleKingSide = moveGeneration.blackCastleKingSide;
-    oldRights.blackCastleQueenSide = moveGeneration.blackCastleQueenSide;
-    oldRights.whiteCastleKingSide = moveGeneration.whiteCastleKingSide;
-    oldRights.whiteCastleQueenSide = moveGeneration.whiteCastleQueenSide;
+    // remove original piece from zobrist key
+    zobristKey ^= zobrist.getPieceHash(movedPieceType, colorIndex, move.start);
+    // add target square to zobrist key
+    zobristKey ^= zobrist.getPieceHash(piece->getPieceType(), colorIndex, move.target);
+    // update side to move
+    zobristKey ^= zobrist.sideToMove;
+
+    if (oldEnPessentSquare != moveGeneration.noEnPessant)
+    {
+        // remove the old enPessent file
+        zobristKey ^= zobrist.getEnPessentFile(oldEnPessentSquare);
+    }
+
+    // remove old castling rights
+    updateCastlingRights(move);
+    // black castle
+    if (oldRights.blackCastleKingSide != moveGeneration.blackCastleKingSide)
+        zobristKey ^= zobrist.castleRights[zobrist.blackKingSide];
+    if (oldRights.blackCastleQueenSide != moveGeneration.blackCastleQueenSide)
+        zobristKey ^= zobrist.castleRights[zobrist.blackQueenSide];
+
+    // white castle
+    if (oldRights.whiteCastleKingSide != moveGeneration.whiteCastleKingSide)
+        zobristKey ^= zobrist.castleRights[zobrist.whiteKingSide];
+    if (oldRights.whiteCastleQueenSide != moveGeneration.whiteCastleQueenSide)
+        zobristKey ^= zobrist.castleRights[zobrist.whiteQueenSide];
 
     castlingHistory.push(oldRights);
-    updateCastlingRights(move);
-
     piece->setPiecePosition(move.target);
     endSquare->setPiece(piece);
     startSquare->setPiece(nullptr);
@@ -162,6 +216,11 @@ Move Board::unmakeMove()
     Square *target = board[move.target];
     Square *start = board[move.start];
     Piece *movedPiece = target->getPiece();
+
+    moveGeneration.possibleEnPassant = moveGeneration.noEnPessant;
+
+    zobristKey = zobristKeyHistory.top();
+    zobristKeyHistory.pop();
 
     whiteToMove = !whiteToMove;
     int perspective = whiteToMove ? 1 : -1;
@@ -185,6 +244,7 @@ Move Board::unmakeMove()
         offset = offset * perspective;
         board[move.start + offset]->setPiece(move.capturedPiece);
         pieceList.addPiece(move.capturedPiece);
+        moveGeneration.possibleEnPassant = move.possibleEnPassant;
     }
     // pawn promotion
     if (move.pawnPromotion)
@@ -220,7 +280,6 @@ Move Board::unmakeMove()
     moveGeneration.whiteCastleQueenSide = castleHistory.whiteCastleQueenSide;
     castlingHistory.pop();
 
-    moveGeneration.possibleEnPassant = move.possibleEnPassant;
     this->moveGeneration.setMoves(movesetHistory.top());
     movesetHistory.pop();
 
