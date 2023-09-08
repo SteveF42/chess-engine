@@ -35,6 +35,7 @@ private:
     void drawLastMove();
     void drawPromotionPieces(int file, int color);
     Square *highLightedSquare = nullptr;
+    AI *aiPlayer;
 
 public:
     static const int BOARDSIZE = 8;
@@ -48,8 +49,7 @@ public:
         loadTextures();
         loadSprites();
         gameBoard->moveGeneration.generateMoves(gameBoard);
-        // int positions = AI::moveGenerationTest(5, gameBoard);
-        // std::cout << "Positions evaluated: " << positions;
+        aiPlayer = new AI(gameBoard);
     }
 
     bool isActive() { return window->isOpen(); }

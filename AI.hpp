@@ -2,6 +2,7 @@
 #define AI_H
 #include <stdint.h>
 #include "Board.hpp"
+#include "TranspositionTable.hpp"
 
 class AI
 {
@@ -15,31 +16,38 @@ private:
     const static int INFINITE = 99999999;
     const static int mateScore = 100000;
 
-    const static int TIMEOUT_MILISECONDS = 3000; //10 seconds
-    static Board *position;
-    static bool timeout;
-    static Move bestMoveThisIteration;
-    static clock_t timeoutStart;
+    const static int TIMEOUT_MILISECONDS = 3000; // 10 seconds
+    Board *position;
+    bool timeout;
+    Move bestMoveThisIteration;
+    clock_t timeoutStart;
+    TranspositionTable *tt;
 
-    static int evaluate();
-    static float endgamePhaseWeight(int materialCountWithoutPawns);
-    static int evaluatePieceSquareTables(int colourIndex, float endgamePhaseWeight);
-    static int evaluatePieceSquareTable(const int table[], std::vector<Piece *> &pieceList, bool isWhite);
-    static int mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight);
-    static int countMaterial(int pieceIndex);
-    static void orderMoves(std::vector<Move> &moveTable);
-    static int getPieceValue(int piece);
-    static int searchCaptures(int alpha, int beta);
-    static void sortMoves(std::vector<Move> &moves, int* weights);
-    static int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
-    static int getMaterialInfo(int colorIndex);
-    static void iterativeDeepening();
+    int evaluate();
+    float endgamePhaseWeight(int materialCountWithoutPawns);
+    int evaluatePieceSquareTables(int colourIndex, float endgamePhaseWeight);
+    int evaluatePieceSquareTable(const int table[], std::vector<Piece *> &pieceList, bool isWhite);
+    int mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight);
+    int countMaterial(int pieceIndex);
+    void orderMoves(std::vector<Move> &moveTable,bool useTT=true);
+    int getPieceValue(int piece);
+    int searchCaptures(int alpha, int beta);
+    void sortMoves(std::vector<Move> &moves, int *weights);
+    int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
+    int getMaterialInfo(int colorIndex);
+    void iterativeDeepening();
 
 public:
-    static Move bestMove;
-    static int positions;
-    static void generateBestMove(Board *ref);
-    static long moveGenerationTest(int depth, Board *position);
+    AI(Board *position)
+    {
+        this->position = position;
+        tt = new TranspositionTable(position);
+    }
+    Move bestMove;
+    int positions;
+    int transPositions;
+    void generateBestMove(Board *ref);
+    long moveGenerationTest(int depth, Board *position);
 };
 
 #endif

@@ -4,13 +4,6 @@
 #include <bits/stdc++.h>
 #include <thread>
 
-Move AI::bestMove;
-int AI::positions;
-Board *AI::position;
-bool AI::timeout;
-Move AI::bestMoveThisIteration;
-clock_t AI::timeoutStart;
-
 int partition(std::vector<Move> &moves, int *weights, int low, int high)
 {
     int pivotScore = weights[high];
@@ -56,12 +49,14 @@ void AI::generateBestMove(Board *ref)
     position = ref;
     bestMove = Move();
     positions = 0;
-    // std::thread searchThread(minimax);
+    transPositions = 0;
+    tt->clearTable();
 
     clock_t start, stop;
     // minimax();
     iterativeDeepening();
-    std::cout << "Nodes searched: " << positions;
+    std::cout << "Nodes searched: " << positions << '\n';
+    std::cout << "Transposition table hits: " << transPositions << '\n';
 }
 void AI::iterativeDeepening()
 {
@@ -107,6 +102,8 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
         timeout = true;
         return alpha;
     }
+
+    // if a mating sequence has been found earlier it should skip this position
     if (depthFromRoot > 0)
     {
         alpha = std::max(alpha, (-mateScore) + depthFromRoot);
@@ -115,6 +112,17 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
         {
             return alpha;
         }
+    }
+    // look current position in the transposition table
+    int cacheEval = tt->readTable(alpha, beta, depth);
+    if (cacheEval != tt->FAILED)
+    {
+        transPositions++;
+        if (depthFromRoot == 0)
+        {
+            bestMove = tt->getMove();
+        }
+        return cacheEval;
     }
 
     if (depth == 0)
@@ -133,6 +141,8 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
             return 0;
     }
 
+    int ttFlag = tt->UPPER;
+    Move bestMoveThisPosition;
     for (const auto &move : moves)
     {
         position->makeMove(move);
@@ -144,11 +154,14 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
         // opponent had a better move so don't use it
         if (eval >= beta)
         {
+            tt->writeTable(depth, beta, tt->LOWER, move);
             return beta;
         }
         if (eval > alpha)
         {
+            ttFlag = tt->EXACT;
             alpha = eval;
+            bestMoveThisPosition = move;
             if (depthFromRoot == 0)
             {
                 bestMove = move;
@@ -156,6 +169,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
         }
     }
 
+    tt->writeTable(depth, alpha, ttFlag, bestMoveThisPosition);
     return alpha;
 }
 
@@ -171,7 +185,7 @@ int AI::searchCaptures(int alpha, int beta)
     }
 
     auto captures = position->moveGeneration.generateMoves(position, false);
-    orderMoves(captures);
+    orderMoves(captures, false);
 
     for (auto &capture : captures)
     {
@@ -222,15 +236,14 @@ int AI::evaluate()
 
 int AI::mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight)
 {
-    int mopUpScore = 0;
     if (myMaterial > opponentMaterial + pawnValue * 2 && endgameWeight > 0)
     {
-
+        int mopUpScore = 0;
         int friendlyKingSquare = position->getKing(friendlyIndex)->getPiecePosition();
         int opponentKingSquare = position->getKing(opponentIndex)->getPiecePosition();
         mopUpScore += position->moveGeneration.preComputedMoveData.centreManhattanDistance[opponentKingSquare] * 10;
         // use ortho dst to promote direct opposition
-        mopUpScore += (14 - position->moveGeneration.preComputedMoveData.numRookMovesToReachSquare(friendlyKingSquare, opponentKingSquare)) * 4;
+        mopUpScore += (14 - position->moveGeneration.preComputedMoveData.orthogonalDistance[friendlyKingSquare][opponentKingSquare]) * 4;
 
         return (int)(mopUpScore * endgameWeight);
     }
@@ -293,11 +306,15 @@ int AI::countMaterial(int pieceIndex)
     return material;
 }
 
-void AI::orderMoves(std::vector<Move> &moveTable)
+void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
 {
     int scores[moveTable.size()];
     int i = 0;
-
+    Move hashMove;
+    if (useTT)
+    {
+        hashMove = tt->getMove();
+    }
     for (const auto &move : moveTable)
     {
         int moveScoreGuess = 0;
@@ -318,6 +335,10 @@ void AI::orderMoves(std::vector<Move> &moveTable)
         if (position->moveGeneration.containsSquareInPawnAttackMap(move.target))
         {
             moveScoreGuess -= 350;
+        }
+        if (move.target == hashMove.target && move.start == hashMove.start)
+        {
+            moveScoreGuess += 10000;
         }
         scores[i++] = moveScoreGuess;
     }

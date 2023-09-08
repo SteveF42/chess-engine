@@ -68,6 +68,8 @@ public:
         }
     }
 
+    uint64_t getZobristKey() { return zobristKey; }
+
     Square **getBoard() { return board; }
     void setSquarePiece(int idx, Piece *other);
     void setZobristKey(uint64_t zobrist) { zobristKey = zobrist; }

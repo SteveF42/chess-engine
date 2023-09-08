@@ -2,7 +2,6 @@
 #include "GameEngine.hpp"
 #include "AI.hpp"
 
-
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
 // this is very very bad, I really shouldn't be doing it this way
 // I'm too lazy to change it, it works.
@@ -62,30 +61,30 @@ void GameEngine::update()
     this->drawHighLightedSquare();
     this->drawPieces();
 
-    // if (gameBoard->getWhiteToMove() == this->playAsWhite)
-    // {
-    //     this->movePiece();
-    //     window->display();
-    // }
-    this->movePiece();
-    window->display();
-    // else
-    // {
-    //     window->display();
-    //     if (!pauseMoves)
-    //     {
+    // this->movePiece();
+    // window->display();
+    if (gameBoard->getWhiteToMove() == this->playAsWhite)
+    {
+        this->movePiece();
+        window->display();
+    }
+    else
+    {
+        window->display();
+        if (!pauseMoves)
+        {
 
-    //         // since AI is a static class I have to manually initialize the bestmove here which is bad
-    //         AI::generateBestMove(gameBoard);
-    //         Move &bestMove = AI::bestMove;
-    //         lastMove = bestMove;
-    //         if (bestMove.start != bestMove.target)
-    //         {
-    //             gameBoard->makeMove(bestMove);
-    //             gameBoard->moveGeneration.generateMoves(gameBoard);
-    //         }
-    //     }
-    // }
+            // since AI is a static class I have to manually initialize the bestmove here which is bad
+            aiPlayer->generateBestMove(gameBoard);
+            Move &bestMove = aiPlayer->bestMove;
+            lastMove = bestMove;
+            if (bestMove.start != bestMove.target)
+            {
+                gameBoard->makeMove(bestMove);
+                gameBoard->moveGeneration.generateMoves(gameBoard);
+            }
+        }
+    }
 }
 
 void GameEngine::placePiece(std::string s)
