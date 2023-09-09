@@ -16,12 +16,14 @@ private:
     const static int INFINITE = 99999999;
     const static int mateScore = 100000;
 
-    const static int TIMEOUT_MILISECONDS = 3000; // 10 seconds
+    const static int TIMEOUT_MILISECONDS = 4000; // 10 seconds
     Board *position;
     bool timeout;
     Move bestMoveThisIteration;
     clock_t timeoutStart;
     TranspositionTable *tt;
+    int numExtensions;
+    std::vector<Move> killerMoves;
 
     int evaluate();
     float endgamePhaseWeight(int materialCountWithoutPawns);
@@ -36,6 +38,7 @@ private:
     int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
     int getMaterialInfo(int colorIndex);
     void iterativeDeepening();
+    int calculateExtension(const Move &move);
 
 public:
     AI(Board *position)

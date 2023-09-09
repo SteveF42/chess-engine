@@ -1,5 +1,6 @@
 #include "NewMoveGenerator.hpp"
 #include "Board.hpp"
+#include <span>
 
 std::vector<Move> NewMoveGenerator::generateMoves(Board *board, bool includeQuietMoves /*=true*/)
 {
@@ -13,19 +14,20 @@ std::vector<Move> NewMoveGenerator::generateMoves(Board *board, bool includeQuie
     // Only king moves are valid in a double check position, so can return early.
     if (inDoubleCheck)
     {
-        return moves;
+        return {moves.cbegin(), moves.cbegin() + currentMoveIndex};
     }
 
     generateSlidingMoves();
     generateKnightMoves();
     generatePawnMoves();
 
-    return moves;
+    return {moves.cbegin(), moves.cbegin() + currentMoveIndex};
 }
 
 void NewMoveGenerator::Init()
 {
-    moves.clear();
+    moves = std::vector<Move>(MAX_MOVES);
+    currentMoveIndex = 0;
     inCheck = false;
     inDoubleCheck = false;
     pinsExistInPosition = false;
@@ -68,7 +70,7 @@ void NewMoveGenerator::generateKingMoves()
         // Safe for king to move to this square
         if (!squareIsAttacked(targetSquare))
         {
-            moves.push_back(Move(friendlyKing->getPiecePosition(), targetSquare, friendlyKing->getPieceTypeRaw()));
+            moves[currentMoveIndex++] = Move(friendlyKing->getPiecePosition(), targetSquare, friendlyKing->getPieceTypeRaw());
         }
     }
     getCastleMoves();
@@ -87,7 +89,7 @@ void NewMoveGenerator::getCastleMoves()
             {
                 Move move(currLocation, currLocation + 2, friendlyKing->getPieceTypeRaw(), false, true);
                 move.pieceType = friendlyKing->getPieceTypeRaw();
-                moves.push_back(move);
+                moves[currentMoveIndex++] = move;
             }
         }
     }
@@ -98,12 +100,14 @@ void NewMoveGenerator::getCastleMoves()
             if (!squareIsAttacked(currLocation - 1) && !squareIsAttacked(currLocation - 2))
             {
                 Move move(currLocation, currLocation - 2, friendlyKing->getPieceTypeRaw(), false, true);
-                moves.push_back(move);
+                move.pieceType = friendlyKing->getPieceType();
+                moves[currentMoveIndex++] = move;
             }
         }
     }
 }
-bool NewMoveGenerator::containsSquareInPawnAttackMap(int square){
+bool NewMoveGenerator::containsSquareInPawnAttackMap(int square)
+{
     return ((opponentPawnAttackMap >> square) & 1) != 0;
 }
 
@@ -223,7 +227,6 @@ void NewMoveGenerator::calculateAttackData()
             checkRayBitmask |= (uint64_t)1 << startSquare;
         }
     }
-
 
     // Pawn attacks
     auto opponentPawns = opponentPieces[PieceList::pawnIndex];
@@ -356,7 +359,7 @@ void NewMoveGenerator::generateSlidingPieceMoves(int startSquare, int startDirIn
             {
                 if (genQuiets || isCapture)
                 {
-                    moves.push_back(Move(startSquare, targetSquare, friendlyPieceType));
+                    moves[currentMoveIndex++] = Move(startSquare, targetSquare, friendlyPieceType);
                 }
             }
             // If square not empty, can't move any further in this direction
@@ -396,7 +399,7 @@ void NewMoveGenerator::generateKnightMoves()
                 {
                     continue;
                 }
-                moves.push_back(Move(startSquare, targetSquare,myKnights[i]->getPieceTypeRaw()));
+                moves[currentMoveIndex++] = Move(startSquare, targetSquare, myKnights[i]->getPieceTypeRaw());
             }
         }
     }
@@ -440,11 +443,11 @@ void NewMoveGenerator::generatePawnMoves()
                             // MakePromotionMoves(startSquare, squareOneForward);
                             Move newMove(startSquare, squareOneForward, myPawns[i]->getPieceTypeRaw());
                             newMove.pawnPromotion = true;
-                            moves.push_back(newMove);
+                            moves[currentMoveIndex++] = newMove;
                         }
                         else
                         {
-                            moves.push_back(Move(startSquare, squareOneForward, myPawns[i]->getPieceTypeRaw()));
+                            moves[currentMoveIndex++] = Move(startSquare, squareOneForward, myPawns[i]->getPieceTypeRaw());
                         }
                     }
 
@@ -458,7 +461,7 @@ void NewMoveGenerator::generatePawnMoves()
                             if (!inCheck || squareIsInCheckRay(squareTwoForward))
                             {
                                 // flag en pessent right here
-                                moves.push_back(Move(startSquare, squareTwoForward, pawnPiece->getPieceTypeRaw()));
+                                moves[currentMoveIndex++] = Move(startSquare, squareTwoForward, pawnPiece->getPieceTypeRaw());
                             }
                         }
                     }
@@ -496,11 +499,11 @@ void NewMoveGenerator::generatePawnMoves()
                         // MakePromotionMoves(startSquare, targetSquare);
                         Move newMove(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
                         newMove.pawnPromotion = true;
-                        moves.push_back(newMove);
+                        moves[currentMoveIndex++] = newMove;
                     }
                     else
                     {
-                        moves.push_back(Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw()));
+                        moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
                     }
                 }
 
@@ -510,7 +513,7 @@ void NewMoveGenerator::generatePawnMoves()
                     int epCapturedPawnSquare = targetSquare + ((Board::whiteToMove) ? 8 : -8);
                     if (!inCheckAfterEnPassant(startSquare, targetSquare, epCapturedPawnSquare))
                     {
-                        moves.push_back(Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw(), true));
+                        moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw(), true);
                     }
                 }
             }
@@ -521,7 +524,7 @@ void NewMoveGenerator::generatePawnMoves()
 bool NewMoveGenerator::inCheckAfterEnPassant(int startSquare, int targetSquare, int epCapturedPawnSquare)
 {
     // Update board to reflect en-passant capture
-    Piece* movedPawn = board->getBoard()[startSquare]->getPiece();
+    Piece *movedPawn = board->getBoard()[startSquare]->getPiece();
     Piece *capturedPawn = board->getBoard()[epCapturedPawnSquare]->getPiece();
     board->getBoard()[targetSquare]->setPiece(movedPawn);
     board->getBoard()[startSquare]->setPiece(nullptr);

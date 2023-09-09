@@ -38,6 +38,8 @@ private:
 	const int slidingMovesOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
 	const int kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
 	const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
+	const int MAX_MOVES = 218;
+	int currentMoveIndex;
 
 	std::vector<Move> moves;
 	bool isWhiteToMove;

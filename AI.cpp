@@ -50,7 +50,7 @@ void AI::generateBestMove(Board *ref)
     bestMove = Move();
     positions = 0;
     transPositions = 0;
-    tt->clearTable();
+    numExtensions = 0;
 
     clock_t start, stop;
     // minimax();
@@ -62,7 +62,7 @@ void AI::iterativeDeepening()
 {
     timeout = false;
     timeoutStart = clock();
-    for (int currentDepth = 0; currentDepth < 128; currentDepth++)
+    for (int currentDepth = 1; currentDepth < 128; currentDepth++)
     {
         if (currentDepth > 0)
         {
@@ -93,6 +93,26 @@ long AI::moveGenerationTest(int depth, Board *position)
         position->unmakeMove();
     }
     return numPositions;
+}
+
+int AI::calculateExtension(const Move &move)
+{
+    int movedPieceType = move.pieceType;
+    int targetRank = move.target / 8;
+
+    int extension = 0;
+    if (numExtensions < 16)
+    {
+        if (position->moveGeneration.isCheck())
+        {
+            extension = 1;
+        }
+        else if (Piece::getPieceType(movedPieceType) == Piece::PAWN && (targetRank == 1 || targetRank == 6))
+        {
+            extension = 1;
+        }
+    }
+    return extension;
 }
 
 int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFINITY*/, int beta /*=INFINITY*/)
@@ -143,10 +163,13 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
 
     int ttFlag = tt->UPPER;
     Move bestMoveThisPosition;
+
     for (const auto &move : moves)
     {
         position->makeMove(move);
-        int eval = -minimax(depth - 1, depthFromRoot + 1, -beta, -alpha);
+        int extension = calculateExtension(move);
+        numExtensions += extension;
+        int eval = -minimax(depth - 1 + extension, depthFromRoot + 1, -beta, -alpha);
         position->unmakeMove();
 
         positions++;
@@ -212,9 +235,6 @@ int AI::evaluate()
     int whiteMaterial = countMaterial(PieceList::whiteIndex);
     int blackMaterial = countMaterial(PieceList::blackIndex);
 
-    int whiteMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::whiteIndex)[PieceList::pawnIndex].size() * pawnValue;
-    int blackMaterialWithNoPawns = whiteMaterial - position->pieceList.getPieces(PieceList::blackIndex)[PieceList::pawnIndex].size() * pawnValue;
-
     float whiteEndgamePhaseWeight = getMaterialInfo(PieceList::whiteIndex);
     float blackEndgamePhaseWeight = getMaterialInfo(PieceList::blackIndex);
 
@@ -241,8 +261,9 @@ int AI::mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int oppo
         int mopUpScore = 0;
         int friendlyKingSquare = position->getKing(friendlyIndex)->getPiecePosition();
         int opponentKingSquare = position->getKing(opponentIndex)->getPiecePosition();
+        // encourage king to edge of board
         mopUpScore += position->moveGeneration.preComputedMoveData.centreManhattanDistance[opponentKingSquare] * 10;
-        // use ortho dst to promote direct opposition
+        // encourage king to move closer to other king
         mopUpScore += (14 - position->moveGeneration.preComputedMoveData.orthogonalDistance[friendlyKingSquare][opponentKingSquare]) * 4;
 
         return (int)(mopUpScore * endgameWeight);
@@ -268,7 +289,7 @@ int AI::evaluatePieceSquareTables(int colorIndex, float endgamePhaseWeight)
     value += (int)(pawnEarly * (1 - endgamePhaseWeight));
     value += (int)(pawnEnd * endgamePhaseWeight);
 
-    int kingEarlyPhase = PieceSquareTable::read(PieceSquareTable::kingMiddle, king->getPiecePosition(), isWhite);
+    int kingEarlyPhase = PieceSquareTable::read(PieceSquareTable::kingStart, king->getPiecePosition(), isWhite);
     int kingLatePhase = PieceSquareTable::read(PieceSquareTable::kingEnd, king->getPiecePosition(), isWhite);
 
     value += (int)(kingEarlyPhase * (1 - endgamePhaseWeight));
@@ -341,9 +362,9 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
             moveScoreGuess += 10000;
         }
         scores[i++] = moveScoreGuess;
+        quickSort(moveTable, scores, 0, moveTable.size() - 1);
+        // sortMoves(moveTable,scores);
     }
-    quickSort(moveTable, scores, 0, moveTable.size() - 1);
-    // sortMoves(moveTable,scores);
 }
 
 void AI::sortMoves(std::vector<Move> &moves, int *weights)
@@ -380,16 +401,6 @@ int AI::getMaterialInfo(int colorIndex)
     int numBishops = pieces[PieceList::bishopIndex].size();
     int numRooks = pieces[PieceList::rookIndex].size();
     int numQueens = pieces[PieceList::queenIndex].size();
-
-    int numMajors = numRooks + numQueens;
-    int numMinors = numBishops + numKnights;
-
-    int materialScore = 0;
-    materialScore += numPawns * pawnValue;
-    materialScore += numKnights * knightValue;
-    materialScore += numBishops * bishopValue;
-    materialScore += numRooks * rookValue;
-    materialScore += numQueens * queenValue;
 
     // Endgame Transition (0->1)
     const int queenEndgameWeight = 45;
