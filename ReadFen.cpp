@@ -58,7 +58,6 @@ Board *ReadFen::readFenString(std::string fen)
             char c = tolower(i);
             int pieceType = lookUpTable[c];
             int pieceColor = isWhite ? Piece::WHITE : Piece::BLACK;
-            sf::Vector2f spritePosition(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
             Piece *newPiece = new Piece(pieceType | pieceColor, position);
 
             newBoard->setSquarePiece(position, newPiece);
@@ -86,6 +85,7 @@ Board *ReadFen::readFenString(std::string fen)
 
     uint64_t zobristKey = newBoard->zobrist.generateZobristKey(newBoard);
     newBoard->setZobristKey(zobristKey);
+    newBoard->initializeBitBoards();
 
     return newBoard;
 }

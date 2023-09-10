@@ -1,6 +1,7 @@
 #include "Board.hpp"
 #include <vector>
 #include <iostream>
+#include "BitBoardUtil.hpp"
 
 bool Board::whiteToMove;
 
@@ -36,6 +37,17 @@ bool Board::validateMove(int startIdx, int target)
     return false;
 }
 
+void Board::movePiece(Piece *piece, Square *start, Square *target)
+{
+    int colorIndex = piece->getPieceColor() == Piece::WHITE ? PieceList::whiteIndex : PieceList::blackIndex;
+    piece->setPiecePosition(target->getSquarePosition());
+    target->setPiece(piece);
+    start->setPiece(nullptr);
+
+    BitBoardUtil::flipBits(bitboards[colorIndex][piece->getPieceType() - 1], start->getSquarePosition(), target->getSquarePosition());
+    BitBoardUtil::flipBits(colorBitboard[colorIndex], start->getSquarePosition(), target->getSquarePosition());
+}
+
 void Board::makeMove(Move move)
 {
     Square *startSquare = board[move.start];
@@ -51,6 +63,12 @@ void Board::makeMove(Move move)
     int perspective = whiteToMove ? 1 : -1;
     int startRank = move.start / 8;
     int endRank = move.target / 8;
+    enPessentHistory.push(oldEnPessentSquare);
+
+    Piece *capturedPiece = endSquare->getPiece();
+    int capturePieceType = -1;
+    // moves the piece and flips its bits
+    movePiece(piece, startSquare, endSquare);
 
     zobristKeyHistory.push(zobristKey);
 
@@ -61,12 +79,16 @@ void Board::makeMove(Move move)
     oldRights.whiteCastleQueenSide = moveGeneration.whiteCastleQueenSide;
 
     // capture
-    if (!endSquare->hasNullPiece() && !move.isEnPassant)
+    if (capturedPiece != nullptr && !move.isEnPassant)
     {
-        Piece *capturedPiece = endSquare->getPiece();
         move.capturedPiece = capturedPiece;
+        capturePieceType = capturedPiece->getPieceTypeRaw();
         pieceList.removePiece(capturedPiece);
         move.capture = true;
+
+        // remove piece from bitboard
+        BitBoardUtil::flipBit(bitboards[opponentIndex][capturedPiece->getPieceType() - 1], move.target);
+        BitBoardUtil::flipBit(colorBitboard[opponentIndex], move.target);
         // remove captured piece from zobrist key
         zobristKey ^= zobrist.getPieceHash(capturedPiece->getPieceType(), opponentIndex, move.target);
 
@@ -105,21 +127,31 @@ void Board::makeMove(Move move)
     {
         int offset = std::abs(move.start - move.target) == 9 ? -1 : 1;
         offset = offset * perspective;
-        Piece *pawn = board[move.start + offset]->getPiece();
+        int pawnPos = move.start + offset;
+        Piece *pawn = board[pawnPos]->getPiece();
         move.capturedPiece = pawn;
         pieceList.removePiece(pawn);
-        board[move.start + offset]->setPiece(nullptr);
+        board[pawnPos]->setPiece(nullptr);
 
-        //remove pawn from key
-        zobristKey ^= zobrist.getPieceHash(pawn->getPieceType(), opponentIndex, move.start + offset);
+        // remove pawn from bitboard
+        BitBoardUtil::flipBit(bitboards[opponentIndex][pawn->getPieceType() - 1], pawnPos);
+        BitBoardUtil::flipBit(colorBitboard[opponentIndex], pawnPos);
+        // remove pawn from key
+        zobristKey ^= zobrist.getPieceHash(pawn->getPieceType(), opponentIndex, pawnPos);
     }
     // pawn promotion
     if (piece->getPieceType() == Piece::PAWN && move.pawnPromotion)
     {
+        // remove pawn from board
+        BitBoardUtil::flipBit(bitboards[colorIndex][piece->getPieceType() - 1], move.target);
+
         pieceList.removePiece(piece);
         piece->promoteType(Piece::QUEEN);
         // removes it from the pawn list and adds it to it to its corresponding pieceList
         pieceList.addPiece(piece);
+
+        // add it to its promoted piece type
+        BitBoardUtil::flipBit(bitboards[colorIndex][piece->getPieceType() - 1], move.target);
     }
     // castle move
     if (move.isCastle)
@@ -139,6 +171,10 @@ void Board::makeMove(Move move)
             zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, from);
             // add new rook position
             zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, to);
+
+            // remove rook from board and add it to new position
+            BitBoardUtil::flipBits(bitboards[colorIndex][rook->getPieceType() - 1], from, to);
+            BitBoardUtil::flipBits(colorBitboard[colorIndex], from, to);
         }
         else // queen side castle
         {
@@ -153,6 +189,10 @@ void Board::makeMove(Move move)
             zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, from);
             // add new rook position
             zobristKey ^= zobrist.getPieceHash(rook->getPieceType(), colorIndex, to);
+
+            // remove rook from board and add it to new position
+            BitBoardUtil::flipBits(bitboards[colorIndex][rook->getPieceType() - 1], from, to);
+            BitBoardUtil::flipBits(colorBitboard[colorIndex], from, to);
         }
     }
 
@@ -197,13 +237,15 @@ void Board::makeMove(Move move)
         zobristKey ^= zobrist.castleRights[zobrist.whiteQueenSide];
 
     castlingHistory.push(oldRights);
-    piece->setPiecePosition(move.target);
-    endSquare->setPiece(piece);
-    startSquare->setPiece(nullptr);
     moveHistory.push(move);
 
     movesetHistory.push(moveGeneration.getMoves());
     whiteToMove = !whiteToMove;
+
+    // std::cout << "Zobrist Key:  " << zobristKey << '\n';
+    // zobrist.generateZobristKey(this);
+
+    // std::cout << "Piece: " << move.pieceType << " " << move.start << " to " << move.target << " captured piece: " << capturePieceType << '\n';
 }
 
 Move Board::unmakeMove()
@@ -217,8 +259,8 @@ Move Board::unmakeMove()
     Square *start = board[move.start];
     Piece *movedPiece = target->getPiece();
 
-    moveGeneration.possibleEnPassant = moveGeneration.noEnPessant;
-
+    moveGeneration.possibleEnPassant = enPessentHistory.top();
+    enPessentHistory.pop();
     zobristKey = zobristKeyHistory.top();
     zobristKeyHistory.pop();
 
@@ -343,4 +385,46 @@ void Board::setSquarePiece(int idx, Piece *other)
             blackKing = other;
         }
     }
+}
+
+void Board::initializeBitBoards()
+{
+    auto whitePieces = pieceList.getPieces(PieceList::whiteIndex);
+    auto blackPieces = pieceList.getPieces(PieceList::blackIndex);
+
+    for (int i = 0; i < PieceList::arrSize; i++)
+    {
+        // sets white bitboards
+        for (int j = 0; j < whitePieces[i].size(); j++)
+        {
+            Piece *piece = whitePieces[i][j];
+            int pieceType = piece->getPieceType();
+            int position = piece->getPiecePosition();
+
+            uint64_t &bitboard = bitboards[PieceList::whiteIndex][pieceType - 1];
+            BitBoardUtil::setBit(bitboard, position);
+        }
+
+        // sets black bitboards
+        for (int j = 0; j < blackPieces[i].size(); j++)
+        {
+            Piece *piece = whitePieces[i][j];
+            int pieceType = piece->getPieceType();
+            int position = piece->getPiecePosition();
+
+            uint64_t &bitboard = bitboards[PieceList::blackIndex][pieceType - 1];
+            BitBoardUtil::setBit(bitboard, position);
+        }
+    }
+
+    uint64_t whiteBoard = bitboards[PieceList::whiteIndex][0] | bitboards[PieceList::whiteIndex][1] |
+                          bitboards[PieceList::whiteIndex][2] | bitboards[PieceList::whiteIndex][3] |
+                          bitboards[PieceList::whiteIndex][4] | bitboards[PieceList::whiteIndex][5];
+
+    uint64_t blackBoard = bitboards[PieceList::blackIndex][0] | bitboards[PieceList::blackIndex][1] |
+                          bitboards[PieceList::blackIndex][2] | bitboards[PieceList::blackIndex][3] |
+                          bitboards[PieceList::blackIndex][4] | bitboards[PieceList::blackIndex][5];
+
+    colorBitboard[PieceList::whiteIndex] = whiteBoard;
+    colorBitboard[PieceList::blackIndex] = blackBoard;
 }

@@ -19,6 +19,21 @@ struct CastlingRights
 class Board
 {
 private:
+    // Bits 0-3 store white and black kingside/queenside castling legality
+    // Bits 4-7 store file of ep square (starting at 1, so 0 = no ep square)
+    // Bits 8-13 captured piece
+    // Bits 14-... fifty mover counter
+    std::stack<unsigned int> gameStateHistory;
+    unsigned int currentGameState;
+    const unsigned int whiteCastleKingsideMask = 0b1111111111111110;
+    const unsigned int whiteCastleQueensideMask = 0b1111111111111101;
+    const unsigned int blackCastleKingsideMask = 0b1111111111111011;
+    const unsigned int blackCastleQueensideMask = 0b1111111111110111;
+
+    const unsigned int whiteCastleMask = whiteCastleKingsideMask & whiteCastleQueensideMask;
+    const unsigned int blackCastleMask = blackCastleKingsideMask & blackCastleQueensideMask;
+
+    std::stack<int> enPessentHistory;
     std::stack<std::vector<Move>> movesetHistory;
     std::stack<Move> moveHistory;
     Square *board[64];
@@ -32,8 +47,13 @@ private:
     uint64_t zobristKey;
     std::stack<uint64_t> zobristKeyHistory;
 
+    // list of bitboards for the white and black index
+    uint64_t bitboards[2][6];
+    uint64_t colorBitboard[2];
+
     // class methods
     void updateCastlingRights(const Move &move);
+    void movePiece(Piece *piece, Square *start, Square *target);
 
 public:
     static bool whiteToMove;
@@ -42,6 +62,7 @@ public:
     void makeMove(Move move);
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);
+    void initializeBitBoards();
 
     NewMoveGenerator moveGeneration;
     Zobrist zobrist;

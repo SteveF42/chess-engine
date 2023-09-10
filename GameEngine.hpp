@@ -16,14 +16,17 @@ private:
     const sf::Color ORANGE = sf::Color(255, 165, 0, 100);
     const sf::Color GOLD = sf::Color(214, 108, 102, 200);
     const float screenOffsetMultiplyer = 1.5;
-    sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(200, 200), "chess engine!");
+    const unsigned int TARGETSIZE = 1000;
+    sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(TARGETSIZE, TARGETSIZE), "chess engine!");
     Board *gameBoard;
     bool pauseMoves = false;
     bool playAsWhite;
+    int flippedView;
 
     std::map<int, sf::Sprite> pieceSprites;
     Move lastMove = Move(-1, -1, -1);
 
+    int getSquarePosition();
     static void loadTextures();
     void loadSprites();
     void selectPieceOrSquare();
@@ -39,10 +42,10 @@ private:
 
 public:
     static const int BOARDSIZE = 8;
-    static constexpr float SQUARESIZE = 25.f;
+    const float SQUARESIZE = (int)(window->getSize().x / BOARDSIZE);
     static std::map<std::string, sf::Texture *> textures;
 
-    GameEngine(std::string fenString,bool playAsWhite = true)
+    GameEngine(std::string fenString, bool playAsWhite = true)
     {
         this->playAsWhite = playAsWhite;
         gameBoard = ReadFen::readFenString(fenString);
@@ -50,6 +53,10 @@ public:
         loadSprites();
         gameBoard->moveGeneration.generateMoves(gameBoard);
         aiPlayer = new AI(gameBoard);
+
+        flippedView = playAsWhite ? 0 : 63;
+        // Move a(52,44,Piece::PAWN | Piece::WHITE);
+        // gameBoard->makeMove(a);
     }
 
     bool isActive() { return window->isOpen(); }

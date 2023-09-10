@@ -37,9 +37,11 @@ private:
     Board *board;
 
 public:
+    static int visits;
     TranspositionTable(Board *board)
     {
         this->board = board;
+        clearTable();
     }
     const int EXACT = 0;
     const int UPPER = 1;

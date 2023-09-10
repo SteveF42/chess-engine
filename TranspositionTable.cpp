@@ -1,5 +1,7 @@
 #include "TranspositionTable.hpp"
 
+int TranspositionTable::visits;
+
 void TranspositionTable::clearTable()
 {
     for (int i = 0; i < TABLESIZE; i++)
@@ -46,6 +48,7 @@ void TranspositionTable::writeTable(int depth, int eval, int flag, Move bestMove
     entry.depth = depth;
     entry.eval = eval;
     entry.flag = flag;
+    visits++;
 }
 
 Move TranspositionTable::getMove()

@@ -50,19 +50,23 @@ void AI::generateBestMove(Board *ref)
     bestMove = Move();
     positions = 0;
     transPositions = 0;
+    qPositions = 0;
     numExtensions = 0;
 
     clock_t start, stop;
+    // tt->clearTable();
     // minimax();
     iterativeDeepening();
     std::cout << "Nodes searched: " << positions << '\n';
+    std::cout << "Quiet nodes searched: " << qPositions << '\n';
     std::cout << "Transposition table hits: " << transPositions << '\n';
+    std::cout << "transposition table visits: " << tt->visits << '\n';
 }
 void AI::iterativeDeepening()
 {
     timeout = false;
     timeoutStart = clock();
-    for (int currentDepth = 1; currentDepth < 128; currentDepth++)
+    for (int currentDepth = 0; currentDepth < 128; currentDepth++)
     {
         if (currentDepth > 0)
         {
@@ -120,7 +124,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
     if (clock() - timeoutStart > TIMEOUT_MILISECONDS)
     {
         timeout = true;
-        return alpha;
+        return 0;
     }
 
     // if a mating sequence has been found earlier it should skip this position
@@ -164,13 +168,39 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
     int ttFlag = tt->UPPER;
     Move bestMoveThisPosition;
 
-    for (const auto &move : moves)
+    for (int i = 0; i < moves.size(); i++)
     {
-        position->makeMove(move);
+        Move &move = moves[i];
         int extension = calculateExtension(move);
         numExtensions += extension;
-        int eval = -minimax(depth - 1 + extension, depthFromRoot + 1, -beta, -alpha);
+        bool isCapture = position->getBoard()[move.target]->hasNullPiece();
+
+        position->makeMove(move);
+        bool needsFullSearch = true;
+        int eval = 0;
+
+        if (i >= 3 && extension == 0 && depth >= 3 && !isCapture)
+        {
+            const int reduceDepth = 1;
+            eval = -minimax(depth - 1 - reduceDepth, depthFromRoot + 1, -beta, -alpha);
+            // If the evaluation turns out to be better than anything we've found so far, we'll need to redo the
+            // search at the full depth to get a more accurate result. Note: this does introduce some danger that
+            // we might miss a good move if the reduced search cannot see that it is good, but the idea is for
+            // the increased search speed to outweigh these occasional errors.
+            needsFullSearch = eval > alpha;
+        }
+
+        // Perform a full-depth search
+        if (needsFullSearch)
+        {
+            eval = -minimax(depth - 1 + extension, depthFromRoot + 1, -beta, -alpha);
+        }
         position->unmakeMove();
+
+        if (timeout)
+        {
+            return 0;
+        }
 
         positions++;
 
@@ -198,6 +228,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
 
 int AI::searchCaptures(int alpha, int beta)
 {
+
     int eval = evaluate();
 
     if (eval >= beta)
@@ -215,7 +246,7 @@ int AI::searchCaptures(int alpha, int beta)
         position->makeMove(capture);
         eval = -searchCaptures(-beta, -alpha);
         position->unmakeMove();
-        AI::positions++;
+        qPositions++;
 
         if (eval >= beta)
             return beta;
@@ -338,6 +369,11 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
     }
     for (const auto &move : moveTable)
     {
+        if (move.target == hashMove.target && move.start == hashMove.start)
+        {
+            scores[i++] += 1000000000;
+            continue;
+        }
         int moveScoreGuess = 0;
         int movePieceType = position->getBoard()[move.start]->getPiece()->getPieceType();
         if (!position->getBoard()[move.target]->hasNullPiece())
@@ -357,14 +393,10 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         {
             moveScoreGuess -= 350;
         }
-        if (move.target == hashMove.target && move.start == hashMove.start)
-        {
-            moveScoreGuess += 10000;
-        }
         scores[i++] = moveScoreGuess;
-        quickSort(moveTable, scores, 0, moveTable.size() - 1);
         // sortMoves(moveTable,scores);
     }
+    quickSort(moveTable, scores, 0, moveTable.size() - 1);
 }
 
 void AI::sortMoves(std::vector<Move> &moves, int *weights)

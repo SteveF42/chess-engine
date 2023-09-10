@@ -45,6 +45,8 @@ void NewMoveGenerator::Init()
 void NewMoveGenerator::generateKingMoves()
 {
     int friendlyKingPos = friendlyKing->getPiecePosition();
+    uint64_t kingMoves = preComputedMoveData.kingAttackBitboards[friendlyKingPos];
+
     for (int i = 0; i < preComputedMoveData.kingMoves[friendlyKingPos].size(); i++)
     {
         int targetSquare = preComputedMoveData.kingMoves[friendlyKingPos][i];
@@ -100,7 +102,7 @@ void NewMoveGenerator::getCastleMoves()
             if (!squareIsAttacked(currLocation - 1) && !squareIsAttacked(currLocation - 2))
             {
                 Move move(currLocation, currLocation - 2, friendlyKing->getPieceTypeRaw(), false, true);
-                move.pieceType = friendlyKing->getPieceType();
+                move.pieceType = friendlyKing->getPieceTypeRaw();
                 moves[currentMoveIndex++] = move;
             }
         }

@@ -5,12 +5,16 @@
 #include "PieceList.hpp"
 #include "Board.hpp"
 
-uint64_t rand_uint64_slow()
+#define IMAX_BITS(m) ((m) / ((m) % 255 + 1) / 255 % 255 * 8 + 7 - 86 / ((m) % 255 + 12))
+#define RAND_MAX_WIDTH IMAX_BITS(RAND_MAX)
+
+uint64_t rand64()
 {
     uint64_t r = 0;
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < 64; i += RAND_MAX_WIDTH)
     {
-        r = r * 2 + rand() % 2;
+        r <<= RAND_MAX_WIDTH;
+        r ^= (unsigned)rand();
     }
     return r;
 }
@@ -27,7 +31,7 @@ void Zobrist::writeRandomNumbers()
 
     for (int i = 0; i < randomNumbers; i++)
     {
-        uint64_t num = rand_uint64_slow();
+        uint64_t num = rand64();
         randomNumberFile << num;
 
         if (i != randomNumbers - 1)
@@ -71,8 +75,8 @@ uint64_t Zobrist::generateZobristKey(Board *board)
 
     auto whiteKing = board->getKing(PieceList::whiteIndex);
     auto blackKing = board->getKing(PieceList::blackIndex);
-    zobristKey ^= pieceArray[whiteKing->getPieceType()-1][PieceList::whiteIndex][whiteKing->getPiecePosition()];
-    zobristKey ^= pieceArray[blackKing->getPieceType()-1][PieceList::blackIndex][blackKing->getPiecePosition()];
+    zobristKey ^= pieceArray[whiteKing->getPieceType() - 1][PieceList::whiteIndex][whiteKing->getPiecePosition()];
+    zobristKey ^= pieceArray[blackKing->getPieceType() - 1][PieceList::blackIndex][blackKing->getPiecePosition()];
 
     // hashing white pieces
     for (int i = 0; i < PieceList::arrSize; i++)
@@ -99,7 +103,7 @@ uint64_t Zobrist::generateZobristKey(Board *board)
     // hashing castle rights
     if (board->moveGeneration.blackCastleKingSide)
         zobristKey ^= castleRights[blackKingSide];
-        
+
     if (board->moveGeneration.blackCastleQueenSide)
         zobristKey ^= castleRights[blackQueenSide];
 
