@@ -124,7 +124,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
     if (clock() - timeoutStart > TIMEOUT_MILISECONDS)
     {
         timeout = true;
-        return 0;
+        return alpha;
     }
 
     // if a mating sequence has been found earlier it should skip this position
@@ -199,7 +199,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
 
         if (timeout)
         {
-            return 0;
+            return alpha;
         }
 
         positions++;

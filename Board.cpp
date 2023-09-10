@@ -86,7 +86,7 @@ void Board::makeMove(Move move)
         pieceList.removePiece(capturedPiece);
         move.capture = true;
 
-        // remove piece from bitboard
+        // remove opponent piece from bitboard
         BitBoardUtil::flipBit(bitboards[opponentIndex][capturedPiece->getPieceType() - 1], move.target);
         BitBoardUtil::flipBit(colorBitboard[opponentIndex], move.target);
         // remove captured piece from zobrist key
@@ -143,14 +143,13 @@ void Board::makeMove(Move move)
     if (piece->getPieceType() == Piece::PAWN && move.pawnPromotion)
     {
         // remove pawn from board
-        BitBoardUtil::flipBit(bitboards[colorIndex][piece->getPieceType() - 1], move.target);
-
         pieceList.removePiece(piece);
         piece->promoteType(Piece::QUEEN);
         // removes it from the pawn list and adds it to it to its corresponding pieceList
         pieceList.addPiece(piece);
 
-        // add it to its promoted piece type
+        // remove pawn from the pawn bitboard and add it to correct bitboard rook, queen, etc...
+        BitBoardUtil::flipBit(bitboards[colorIndex][movedPieceType - 1], move.target);
         BitBoardUtil::flipBit(bitboards[colorIndex][piece->getPieceType() - 1], move.target);
     }
     // castle move
@@ -258,6 +257,9 @@ Move Board::unmakeMove()
     Square *target = board[move.target];
     Square *start = board[move.start];
     Piece *movedPiece = target->getPiece();
+    int friendlyIndex = movedPiece->getPieceColor() == Piece::WHITE ? PieceList::whiteIndex : PieceList::blackIndex;
+    int opponentIndex = 1 - friendlyIndex;
+    int movedPieceType = movedPiece->getPieceType();
 
     moveGeneration.possibleEnPassant = enPessentHistory.top();
     enPessentHistory.pop();
@@ -268,9 +270,7 @@ Move Board::unmakeMove()
     int perspective = whiteToMove ? 1 : -1;
 
     // moves piece back to original square
-    movedPiece->setPiecePosition(move.start);
-    start->setPiece(movedPiece);
-    target->setPiece(nullptr);
+    movePiece(movedPiece, target, start);
 
     // capture
     if (move.capture && !move.isEnPassant)
@@ -278,15 +278,24 @@ Move Board::unmakeMove()
         Piece *capturedPiece = move.capturedPiece;
         target->setPiece(capturedPiece);
         pieceList.addPiece(capturedPiece);
+
+        // puts piece back on bitboard
+        BitBoardUtil::flipBit(bitboards[opponentIndex][capturedPiece->getPieceType() - 1], move.target);
+        BitBoardUtil::flipBit(colorBitboard[opponentIndex], move.target);
     }
     // en passant move
     else if (move.isEnPassant)
     {
         int offset = std::abs(move.start - move.target) == 9 ? -1 : 1;
         offset = offset * perspective;
-        board[move.start + offset]->setPiece(move.capturedPiece);
+        int pawnPos = offset + move.start;
+        board[pawnPos]->setPiece(move.capturedPiece);
         pieceList.addPiece(move.capturedPiece);
         moveGeneration.possibleEnPassant = move.possibleEnPassant;
+
+        // puts pawn back on bitBoard
+        BitBoardUtil::flipBit(bitboards[opponentIndex][move.capturedPiece->getPieceType() - 1], pawnPos);
+        BitBoardUtil::flipBit(colorBitboard[opponentIndex], pawnPos);
     }
     // pawn promotion
     if (move.pawnPromotion)
@@ -294,6 +303,10 @@ Move Board::unmakeMove()
         pieceList.removePiece(movedPiece);
         movedPiece->promoteType(Piece::PAWN);
         pieceList.addPiece(movedPiece);
+
+        // piece already moved to correct position on colorboard, remove piece from promoted type and put it back into pawn bitboard
+        BitBoardUtil::flipBit(bitboards[friendlyIndex][movedPieceType - 1], move.target);
+        BitBoardUtil::flipBit(bitboards[friendlyIndex][movedPiece->getPieceType() - 1], move.target);
     }
     // castle move
     if (move.isCastle)
@@ -302,17 +315,27 @@ Move Board::unmakeMove()
         int endFile = move.target % 8;
         if (endFile - startFile == 2) // kingside castle
         {
-            Piece *rook = board[move.target - 1]->getPiece();
-            rook->setPiecePosition(move.target + 1);
-            board[move.target + 1]->setPiece(rook);
-            board[move.target - 1]->setPiece(nullptr);
+            int from = move.target - 1;
+            int to = move.target + 1;
+            Piece *rook = board[from]->getPiece();
+            rook->setPiecePosition(to);
+            board[to]->setPiece(rook);
+            board[from]->setPiece(nullptr);
+
+            BitBoardUtil::flipBits(bitboards[friendlyIndex][rook->getPieceType() - 1], from, to);
+            BitBoardUtil::flipBits(colorBitboard[friendlyIndex], from, to);
         }
         else // queen side castle
         {
-            Piece *rook = board[move.target + 1]->getPiece();
-            rook->setPiecePosition(move.target - 2);
-            board[move.target - 2]->setPiece(rook);
-            board[move.target + 1]->setPiece(nullptr);
+            int from = move.target + 1;
+            int to = move.target - 2;
+            Piece *rook = board[from]->getPiece();
+            rook->setPiecePosition(to);
+            board[to]->setPiece(rook);
+            board[from]->setPiece(nullptr);
+
+            BitBoardUtil::flipBits(bitboards[friendlyIndex][rook->getPieceType() - 1], from, to);
+            BitBoardUtil::flipBits(colorBitboard[friendlyIndex], from, to);
         }
     }
     CastlingRights castleHistory = castlingHistory.top();

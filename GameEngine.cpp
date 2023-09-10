@@ -47,11 +47,16 @@ void GameEngine::update()
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::B) && event.type == sf::Event::KeyPressed)
         {
-            // switch board view
+            // switch player sides and board view
             playAsWhite = !playAsWhite;
             flippedView = playAsWhite ? 0 : 63;
-
             pauseMoves = true;
+            std:: cout << (playAsWhite ? "Playing as white" : "Playing as black") << '\n';
+        }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::V) && event.type == sf::Event::KeyPressed)
+        {
+            // switch board view
+            flippedView = std::abs(63 - flippedView);
         }
     }
     // if (gameBoard->moveGeneration.getGameOver())
@@ -162,6 +167,7 @@ void GameEngine::drawLastMove()
     window->draw(rectangle);
 
     // draws end square
+    boardView = std::abs(lastMove.target - flippedView);
     file = boardView % 8;
     rank = boardView / 8;
     rectangle.setPosition(sf::Vector2((file * SQUARESIZE), rank * SQUARESIZE));
