@@ -49,12 +49,13 @@ public:
     {
         this->playAsWhite = playAsWhite;
         gameBoard = ReadFen::readFenString(fenString);
+        aiPlayer = new AI(gameBoard);
         loadTextures();
         loadSprites();
-        gameBoard->moveGeneration.generateMoves(gameBoard);
-        aiPlayer = new AI(gameBoard);
 
         flippedView = playAsWhite ? 0 : 63;
+
+        (void)gameBoard->moveGeneration.generateMoves(gameBoard);
         // Move a(52,44,Piece::PAWN | Piece::WHITE);
         // gameBoard->makeMove(a);
     }

@@ -1,12 +1,13 @@
 #ifndef Move_H
 #define Move_H
-#include"Piece.hpp"
+#include "Piece.hpp"
+
 
 struct Move
 {
     int start;
     int target;
-    int possibleEnPassant = 999;
+    int possibleEnPassant = -1;
     int pieceType;
     bool capture = false;
     bool isEnPassant;
@@ -14,7 +15,7 @@ struct Move
     bool pawnPromotion;
     int promotionPieceType;
     Piece *capturedPiece = nullptr;
-    Move(int s, int t, int pieceType, bool possiblePassant = false, bool castle = false)
+    Move(int s, int t, int pieceType = 0, bool possiblePassant = false, bool castle = false)
     {
         start = s;
         target = t;

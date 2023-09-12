@@ -7,6 +7,8 @@
 class PrecomputedMoveData
 {
 public:
+    uint64_t alignMask[64][64];
+
     // First 4 are orthogonal, last 4 are diagonals (E, W, S, N, SW, NE, SE, NW)
     const int directionOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
 

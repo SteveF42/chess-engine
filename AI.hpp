@@ -35,7 +35,6 @@ private:
     void orderMoves(std::vector<Move> &moveTable,bool useTT=true);
     int getPieceValue(int piece);
     int searchCaptures(int alpha, int beta);
-    void sortMoves(std::vector<Move> &moves, int *weights);
     int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
     int getMaterialInfo(int colorIndex);
     void iterativeDeepening();

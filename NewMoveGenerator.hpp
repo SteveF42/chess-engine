@@ -4,13 +4,14 @@
 #include <vector>
 #include "Move.hpp"
 #include "PreComputedMoveData.hpp"
+#include "Magic.hpp"
 
 class Board;
 
 class NewMoveGenerator
 {
 public:
-	std::vector<Move> generateMoves(Board *board, bool includeQuietMoves = true);
+	std::vector<Move> &generateMoves(Board *board, bool includeQuietMoves = true);
 	PrecomputedMoveData preComputedMoveData;
 	const static int noEnPessant = -1;
 
@@ -26,15 +27,15 @@ public:
 	bool whiteCastleQueenSide = false;
 	int possibleEnPassant = noEnPessant;
 
-	void setMoves(std::vector<Move> moves) { this->moves = moves; }
 	bool containsSquareInPawnAttackMap(int square);
-	std::vector<Move> getMoves() { return moves; }
+	std::vector<Move> &getMoves() { return moves; }
 	bool getGameOver()
 	{
 		return moves.size() == 0;
 	}
 
 private:
+	const int million = 1000000;
 	const int slidingMovesOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
 	const int kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
 	const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};
@@ -43,11 +44,18 @@ private:
 
 	std::vector<Move> moves;
 	bool isWhiteToMove;
-	int friendlyColour;
-	int opponentColour;
+	int friendlyColor;
+	int opponentColor;
 	Piece *friendlyKing;
-	int friendlyColourIndex;
-	int opponentColourIndex;
+	int friendlyColorIndex;
+	int opponentColorIndex;
+
+	uint64_t friendlyPieces;
+	uint64_t opponentPieces;
+	uint64_t moveTypeMask;
+	uint64_t allPieces;
+	uint64_t emptySquares;
+	uint64_t emptyOrEnemySquares;
 
 	bool inCheck;
 	bool inDoubleCheck;
@@ -62,6 +70,7 @@ private:
 
 	bool genQuiets;
 	Board *board;
+	Magic magic;
 
 	void Init();
 
@@ -74,7 +83,7 @@ private:
 	void updateSlidingAttackPiece(int startSquare, int startDirIndex, int endDirIndex);
 	bool containsSquare(uint64_t bitboard, int square);
 	void generateSlidingMoves();
-	void generateSlidingPieceMoves(int startSquare, int startDirIndex, int endDirIndex);
+	void generateSlidingPieceMoves();
 	void generateKnightMoves();
 	bool isPinned(int square);
 	bool inCheckAfterEnPassant(int startSquare, int targetSquare, int epCapturedPawnSquare);

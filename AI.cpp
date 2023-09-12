@@ -89,7 +89,7 @@ long AI::moveGenerationTest(int depth, Board *position)
     auto moves = position->moveGeneration.generateMoves(position);
     long numPositions = 0;
 
-    for (auto move : moves)
+    for (auto &move : moves)
     {
         position->makeMove(move);
         numPositions += moveGenerationTest(depth - 1, position);
@@ -374,12 +374,20 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
             scores[i++] += 1000000000;
             continue;
         }
+        Piece *movedPiece = position->getBoard()[move.start]->getPiece();
+        int pieceType = movedPiece->getPieceType();
         int moveScoreGuess = 0;
         int movePieceType = position->getBoard()[move.start]->getPiece()->getPieceType();
-        if (!position->getBoard()[move.target]->hasNullPiece())
+        bool isCapture = !position->getBoard()[move.target]->hasNullPiece();
+
+        if (isCapture)
         {
             int targetPiece = position->getBoard()[move.target]->getPiece()->getPieceType();
             moveScoreGuess += 10 * (getPieceValue(targetPiece) - getPieceValue(movePieceType));
+        }
+        if (move.isEnPassant)
+        {
+            moveScoreGuess += 25 * pawnValue;
         }
         if (move.pawnPromotion)
         {
@@ -397,32 +405,6 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         // sortMoves(moveTable,scores);
     }
     quickSort(moveTable, scores, 0, moveTable.size() - 1);
-}
-
-void AI::sortMoves(std::vector<Move> &moves, int *weights)
-{
-    if (moves.size() == 0)
-    {
-        return;
-    }
-
-    for (int i = 0; i < moves.size() - 1; i++)
-    {
-        for (int j = i + 1; j > 0; j--)
-        {
-            int swampIndex = j - 1;
-            if (weights[swampIndex] < weights[j])
-            {
-                Move &temp = moves[j];
-                moves[j] = moves[swampIndex];
-                moves[swampIndex] = temp;
-
-                int temp2 = weights[j];
-                weights[j] = weights[swampIndex];
-                weights[swampIndex] = temp2;
-            }
-        }
-    }
 }
 
 int AI::getMaterialInfo(int colorIndex)

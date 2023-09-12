@@ -34,7 +34,6 @@ private:
     const unsigned int blackCastleMask = blackCastleKingsideMask & blackCastleQueensideMask;
 
     std::stack<int> enPessentHistory;
-    std::stack<std::vector<Move>> movesetHistory;
     std::stack<Move> moveHistory;
     Square *board[64];
 
@@ -46,10 +45,6 @@ private:
 
     uint64_t zobristKey;
     std::stack<uint64_t> zobristKeyHistory;
-
-    // list of bitboards for the white and black index
-    uint64_t bitboards[2][6];
-    uint64_t colorBitboard[2];
 
     // class methods
     void updateCastlingRights(const Move &move);
@@ -63,6 +58,10 @@ public:
     std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);
     void initializeBitBoards();
+
+    // list of bitboards for the white and black index
+    uint64_t bitboards[2][5];
+    uint64_t colorBitboard[2];
 
     NewMoveGenerator moveGeneration;
     Zobrist zobrist;

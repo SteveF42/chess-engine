@@ -1,4 +1,5 @@
 #include "PreComputedMoveData.hpp"
+#include "MagicHelper.hpp"
 #include <math.h>
 #include <vector>
 #include "PieceList.hpp"
@@ -19,7 +20,6 @@ PrecomputedMoveData::PrecomputedMoveData()
         int north = rank;
         int west = file;
         int east = 7 - file;
-
 
         // yes I know this looks awful, I hate C++
         numSquaresToEdge[squareIndex][0] = east;
@@ -160,6 +160,27 @@ PrecomputedMoveData::PrecomputedMoveData()
             int fileDistance = std::abs(fileA - fileB);
             orthogonalDistance[squareA][squareB] = fileDistance + rankDistance;
             kingDistance[squareA][squareB] = std::max(fileDistance, rankDistance);
+        }
+    }
+
+    for (int squareA = 0; squareA < 64; squareA++)
+    {
+        for (int squareB = 0; squareB < 64; squareB++)
+        {
+            Coord cA(squareA);
+            Coord cB(squareB);
+            Coord delta = cB - cA;
+            Coord dir((delta.fileIndex > 0) ? 1 : ((delta.fileIndex < 0) ? -1 : 0),(delta.rankIndex > 0) ? 1 : ((delta.rankIndex < 0) ? -1 : 0));
+            // Coord dirOffset = dirOffsets2D[dirIndex];
+
+            for (int i = -8; i < 8; i++)
+            {
+                Coord coord = Coord(squareA) + dir * i;
+                if (coord.isValidSquare())
+                {
+                    alignMask[squareA][squareB] |= 1ul << ((coord.rankIndex * 8) + coord.fileIndex);
+                }
+            }
         }
     }
 }

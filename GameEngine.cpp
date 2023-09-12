@@ -43,6 +43,7 @@ void GameEngine::update()
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && event.type == sf::Event::KeyPressed)
         {
             lastMove = this->gameBoard->unmakeMove();
+            gameBoard->moveGeneration.generateMoves(gameBoard);
             pauseMoves = true;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::B) && event.type == sf::Event::KeyPressed)
