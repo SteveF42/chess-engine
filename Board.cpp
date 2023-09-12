@@ -292,7 +292,6 @@ Move Board::unmakeMove()
         int pawnPos = offset + move.start;
         board[pawnPos]->setPiece(move.capturedPiece);
         pieceList.addPiece(move.capturedPiece);
-        moveGeneration.possibleEnPassant = move.possibleEnPassant;
 
         // puts pawn back on bitBoard
         BitBoardUtil::flipBit(bitboards[opponentIndex][move.capturedPiece->getPieceType() - 1], pawnPos);

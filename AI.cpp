@@ -173,7 +173,7 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
         Move &move = moves[i];
         int extension = calculateExtension(move);
         numExtensions += extension;
-        bool isCapture = position->getBoard()[move.target]->hasNullPiece();
+        bool isCapture = !position->getBoard()[move.target]->hasNullPiece();
 
         position->makeMove(move);
         bool needsFullSearch = true;

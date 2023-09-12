@@ -55,6 +55,7 @@ public:
 
         flippedView = playAsWhite ? 0 : 63;
 
+
         (void)gameBoard->moveGeneration.generateMoves(gameBoard);
         // Move a(52,44,Piece::PAWN | Piece::WHITE);
         // gameBoard->makeMove(a);

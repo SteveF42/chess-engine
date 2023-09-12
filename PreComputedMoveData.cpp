@@ -140,7 +140,7 @@ PrecomputedMoveData::PrecomputedMoveData()
             absDir = 7;
         }
 
-        directionLookup[i] = absDir * signbit(offset);
+        directionLookup[i] = absDir * (offset > 0) ? 1 : ((offset < 0) ? -1 : 0);
     }
 
     // Distance lookup

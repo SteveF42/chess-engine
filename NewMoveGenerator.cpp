@@ -397,7 +397,7 @@ void NewMoveGenerator::generatePawnMoves()
             if (board->getBoard()[squareOneForward]->hasNullPiece())
             {
                 // Pawn not pinned, or is moving along line of pin
-                if (!isPinned(startSquare) || isMovingAlongRay(pawnOffset, startSquare, friendlyKingSquare))
+                if (!isPinned(startSquare) || containsSquare(pinRayBitmask,squareOneForward))
                 {
                     // Not in check, or pawn is interposing checking piece
                     if (!inCheck || squareIsInCheckRay(squareOneForward))
@@ -433,42 +433,38 @@ void NewMoveGenerator::generatePawnMoves()
             }
         }
 
-        // Pawn captures.
+        // pawn attacks
+        uint64_t pawnAttack = preComputedMoveData.pawnAttackBitboards[startSquare][friendlyColorIndex];
+        pawnAttack &= board->colorBitboard[opponentColorIndex] & moveTypeMask;
+
+        if (inCheck)
+        {
+            pawnAttack &= checkRayBitmask;
+        }
+        if (isPinned(startSquare))
+        {
+            pawnAttack &= pinRayBitmask;
+        }
+
+        while (pawnAttack != 0)
+        {
+            int targetSquare = BitBoardUtil::PopLSB(pawnAttack);
+            moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
+        }
+
         for (int j = 0; j < 2; j++)
         {
             // Check if square exists diagonal to pawn
             if (preComputedMoveData.numSquaresToEdge[startSquare][preComputedMoveData.pawnAttackDirections[friendlyColorIndex][j]] > 0)
             {
-                // move in direction friendly pawns attack to get square from which enemy pawn would attack
                 int pawnCaptureDir = preComputedMoveData.directionOffsets[preComputedMoveData.pawnAttackDirections[friendlyColorIndex][j]];
                 int targetSquare = startSquare + pawnCaptureDir;
                 Piece *targetPiece = board->getBoard()[targetSquare]->getPiece();
 
                 // If piece is pinned, and the square it wants to move to is not on same line as the pin, then skip this direction
-                if (isPinned(startSquare) && !isMovingAlongRay(pawnCaptureDir, friendlyKingSquare, startSquare))
+                if (isPinned(startSquare) && !containsSquare(pinRayBitmask,targetSquare))
                 {
                     continue;
-                }
-
-                // Regular capture
-                if (targetPiece != nullptr && targetPiece->getPieceColor() == opponentColor)
-                {
-                    // If in check, and piece is not capturing/interposing the checking piece, then skip to next square
-                    if (inCheck && !squareIsInCheckRay(targetSquare))
-                    {
-                        continue;
-                    }
-                    if (oneStepFromPromotion)
-                    {
-                        // MakePromotionMoves(startSquare, targetSquare);
-                        Move newMove(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
-                        newMove.pawnPromotion = true;
-                        moves[currentMoveIndex++] = newMove;
-                    }
-                    else
-                    {
-                        moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
-                    }
                 }
 
                 // Capture en-passant
@@ -560,10 +556,4 @@ bool NewMoveGenerator::squareAttackedAfterEPCapture(int epCaptureSquare, int cap
     }
 
     return false;
-}
-
-bool NewMoveGenerator::isMovingAlongRay(int rayDir, int startSquare, int targetSquare)
-{
-    int moveDir = preComputedMoveData.directionLookup[targetSquare - startSquare + 63];
-    return (rayDir == moveDir || -rayDir == moveDir);
 }
