@@ -54,7 +54,8 @@ public:
         loadSprites();
 
         flippedView = playAsWhite ? 0 : 63;
-
+        long positions = aiPlayer->moveGenerationTest(5, gameBoard);
+        std::cout << "positions evaluated: " << positions;
 
         (void)gameBoard->moveGeneration.generateMoves(gameBoard);
         // Move a(52,44,Piece::PAWN | Piece::WHITE);

@@ -379,7 +379,7 @@ void NewMoveGenerator::generatePawnMoves()
     int friendlyKingSquare = friendlyKing->getPiecePosition();
     int pawnOffset = (friendlyColor == Piece::WHITE) ? -8 : 8;
     int startRank = (Board::whiteToMove) ? 6 : 1;
-    int finalRankBeforePromotion = (Board::whiteToMove) ? 0 : 7;
+    int finalRankBeforePromotion = (Board::whiteToMove) ? 1 : 6;
 
     for (int i = 0; i < myPawns.size(); i++)
     {
@@ -397,17 +397,14 @@ void NewMoveGenerator::generatePawnMoves()
             if (board->getBoard()[squareOneForward]->hasNullPiece())
             {
                 // Pawn not pinned, or is moving along line of pin
-                if (!isPinned(startSquare) || containsSquare(pinRayBitmask,squareOneForward))
+                if (!isPinned(startSquare) || containsSquare(pinRayBitmask, squareOneForward))
                 {
                     // Not in check, or pawn is interposing checking piece
                     if (!inCheck || squareIsInCheckRay(squareOneForward))
                     {
                         if (oneStepFromPromotion)
                         {
-                            // MakePromotionMoves(startSquare, squareOneForward);
-                            Move newMove(startSquare, squareOneForward, myPawns[i]->getPieceTypeRaw());
-                            newMove.pawnPromotion = true;
-                            moves[currentMoveIndex++] = newMove;
+                            makePromotionMoves(startSquare, squareOneForward);
                         }
                         else
                         {
@@ -449,7 +446,14 @@ void NewMoveGenerator::generatePawnMoves()
         while (pawnAttack != 0)
         {
             int targetSquare = BitBoardUtil::PopLSB(pawnAttack);
-            moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
+            if (oneStepFromPromotion)
+            {
+                makePromotionMoves(startSquare, targetSquare);
+            }
+            else
+            {
+                moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
+            }
         }
 
         for (int j = 0; j < 2; j++)
@@ -462,7 +466,7 @@ void NewMoveGenerator::generatePawnMoves()
                 Piece *targetPiece = board->getBoard()[targetSquare]->getPiece();
 
                 // If piece is pinned, and the square it wants to move to is not on same line as the pin, then skip this direction
-                if (isPinned(startSquare) && !containsSquare(pinRayBitmask,targetSquare))
+                if (isPinned(startSquare) && !containsSquare(pinRayBitmask, targetSquare))
                 {
                     continue;
                 }
@@ -479,6 +483,27 @@ void NewMoveGenerator::generatePawnMoves()
             }
         }
     }
+}
+void NewMoveGenerator::makePromotionMoves(int start, int target)
+{
+    // knight rook bishop queen
+    Move knight(start, target);
+    knight.promotionPieceType = Piece::KNIGHT;
+    knight.pawnPromotion = true;
+    Move rook(start, target);
+    rook.pawnPromotion = true;
+    rook.promotionPieceType = Piece::ROOK;
+    Move bishop(start, target);
+    bishop.pawnPromotion = true;
+    bishop.promotionPieceType = Piece::BISHOP;
+    Move queen(start, target);
+    queen.pawnPromotion = true;
+    queen.promotionPieceType = Piece::QUEEN;
+
+    moves[currentMoveIndex++] = queen;
+    moves[currentMoveIndex++] = rook;
+    moves[currentMoveIndex++] = bishop;
+    moves[currentMoveIndex++] = knight;
 }
 
 bool NewMoveGenerator::inCheckAfterEnPassant(int startSquare, int targetSquare, int epCapturedPawnSquare)

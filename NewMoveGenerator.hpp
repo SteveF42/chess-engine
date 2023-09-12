@@ -74,7 +74,7 @@ private:
 	Magic magic;
 
 	void Init();
-
+	void makePromotionMoves(int start, int target);
 	void generateKingMoves();
 	bool squareIsAttacked(int square);
 	bool squareIsInCheckRay(int square);

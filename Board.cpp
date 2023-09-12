@@ -146,7 +146,7 @@ void Board::makeMove(Move move)
     {
         // remove pawn from board
         pieceList.removePiece(piece);
-        piece->promoteType(Piece::QUEEN);
+        piece->promoteType(move.promotionPieceType);
         // removes it from the pawn list and adds it to it to its corresponding pieceList
         pieceList.addPiece(piece);
 

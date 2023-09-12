@@ -404,7 +404,22 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         }
         if (move.pawnPromotion)
         {
-            moveScoreGuess += 6 * million;
+            if (move.promotionPieceType == Piece::QUEEN)
+            {
+                moveScoreGuess += 6 * million;
+            }
+            else if (move.promotionPieceType == Piece::ROOK)
+            {
+                moveScoreGuess += 5 * million;
+            }
+            else if (move.promotionPieceType == Piece::BISHOP)
+            {
+                moveScoreGuess += 3 * million;
+            }
+            else if (move.promotionPieceType == Piece::KNIGHT)
+            {
+                moveScoreGuess += 2 * million;
+            }
         }
         if (move.isCastle)
         {
