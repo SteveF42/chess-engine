@@ -29,13 +29,14 @@ public:
 
 	bool containsSquareInPawnAttackMap(int square);
 	std::vector<Move> &getMoves() { return moves; }
+	uint64_t getAttackMap() { return opponentAttackMap; }
+	uint64_t getPawnAttackMap() { return opponentPawnAttackMap; }
 	bool getGameOver()
 	{
 		return moves.size() == 0;
 	}
 
 private:
-	const int million = 1000000;
 	const int slidingMovesOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
 	const int kingMovesOffsets[8] = {1, 7, 8, 9, -1, -7, -8, -9};
 	const int knightOffset[8] = {6, 10, 15, 17, -6, -10, -15, -17};

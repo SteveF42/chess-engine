@@ -362,6 +362,10 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
 {
     int scores[moveTable.size()];
     int i = 0;
+
+    uint64_t opponentAttacks = position->moveGeneration.getAttackMap();
+    uint64_t opponentPawnAttacks = position->moveGeneration.getPawnAttackMap();
+
     Move hashMove;
     if (useTT)
     {
@@ -383,7 +387,16 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         if (isCapture)
         {
             int targetPiece = position->getBoard()[move.target]->getPiece()->getPieceType();
-            moveScoreGuess += 10 * (getPieceValue(targetPiece) - getPieceValue(movePieceType));
+            int changeInPieceScore = (getPieceValue(targetPiece) - getPieceValue(movePieceType));
+            bool reCapturePossible = BitBoardUtil::containsBit(opponentAttacks | opponentPawnAttacks, move.target);
+            if (reCapturePossible)
+            {
+                moveScoreGuess += (changeInPieceScore >= 0 ? (8 * million) : (2 * million)) + changeInPieceScore;
+            }
+            else
+            {
+                moveScoreGuess += (8 * million) + changeInPieceScore;
+            }
         }
         if (move.isEnPassant)
         {
@@ -391,15 +404,22 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         }
         if (move.pawnPromotion)
         {
-            moveScoreGuess += 500;
+            moveScoreGuess += 6 * million;
         }
         if (move.isCastle)
         {
-            moveScoreGuess += 1300;
+            moveScoreGuess += 1000;
         }
-        if (position->moveGeneration.containsSquareInPawnAttackMap(move.target))
+        if (pieceType != Piece::KING)
         {
-            moveScoreGuess -= 350;
+            if (BitBoardUtil::containsBit(opponentPawnAttacks, move.target))
+            {
+                moveScoreGuess -= 50;
+            }
+            else if (BitBoardUtil::containsBit(opponentAttacks, move.target))
+            {
+                moveScoreGuess -= 25;
+            }
         }
         scores[i++] = moveScoreGuess;
         // sortMoves(moveTable,scores);

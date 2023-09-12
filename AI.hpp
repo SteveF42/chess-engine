@@ -7,6 +7,8 @@
 class AI
 {
 private:
+    const int million = 1000000;
+
     const static int pawnValue = 100;
     const static int knightValue = 300;
     const static int bishopValue = 350;
@@ -32,7 +34,7 @@ private:
     int evaluatePieceSquareTable(const int table[], std::vector<Piece *> &pieceList, bool isWhite);
     int mopUpEval(int friendlyIndex, int opponentIndex, int myMaterial, int opponentMaterial, float endgameWeight);
     int countMaterial(int pieceIndex);
-    void orderMoves(std::vector<Move> &moveTable,bool useTT=true);
+    void orderMoves(std::vector<Move> &moveTable, bool useTT = true);
     int getPieceValue(int piece);
     int searchCaptures(int alpha, int beta);
     int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
