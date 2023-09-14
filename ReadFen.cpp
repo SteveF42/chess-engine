@@ -32,6 +32,7 @@ std::vector<std::string> splitString(std::string s)
 Board *ReadFen::readFenString(std::string fen)
 {
     std::map<char, int> lookUpTable = {{'k', Piece::KING}, {'q', Piece::QUEEN}, {'b', Piece::BISHOP}, {'r', Piece::ROOK}, {'n', Piece::KNIGHT}, {'p', Piece::PAWN}};
+    std::map<char, int> numberSquare = {{'a', 0}, {'b', 1}, {'c', 2}, {'d', 3}, {'e', 4}, {'f', 5}, {'g', 6}, {'h', 7}};
     std::vector<std::string> sections = splitString(fen);
     Board *newBoard = new Board();
 
@@ -84,6 +85,8 @@ Board *ReadFen::readFenString(std::string fen)
     newBoard->setWhiteCastleQueenSide(sections[2].find("Q") != std::string::npos ? true : false);
 
     uint64_t zobristKey = newBoard->zobrist.generateZobristKey(newBoard);
+    if (sections[3] != "-")
+        newBoard->moveGeneration.possibleEnPassant = numberSquare[sections[3][0]] + (8 - (sections[3][1] - '0')) * 8;
     newBoard->setZobristKey(zobristKey);
     newBoard->initializeBitBoards();
 

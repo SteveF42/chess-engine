@@ -18,7 +18,7 @@ private:
     const static int INFINITE = 99999999;
     const static int mateScore = 100000;
 
-    const static int TIMEOUT_MILISECONDS = 3000; // 10 seconds
+    const static int TIMEOUT_MILISECONDS = 4000; // 10 seconds
     Board *position;
     bool timeout;
     Move bestMoveThisIteration;

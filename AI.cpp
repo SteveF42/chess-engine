@@ -391,7 +391,7 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
             bool reCapturePossible = BitBoardUtil::containsBit(opponentAttacks | opponentPawnAttacks, move.target);
             if (reCapturePossible)
             {
-                moveScoreGuess += (changeInPieceScore >= 0 ? (8 * million) : (2 * million)) + changeInPieceScore;
+                moveScoreGuess += (changeInPieceScore >= 0 ? (8 * million) : (1 * million)) + changeInPieceScore;
             }
             else
             {
