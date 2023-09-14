@@ -193,12 +193,15 @@ PrecomputedMoveData::PrecomputedMoveData()
                 int fileRay = aFile + dirFile * i;
                 int rankRay = aRank + dirRank * i;
 
-                if (fileRay >= 0 && fileRay < 64 && rankRay >= 0 && rankRay < 64) //checks if we are currently evaluating a valid square
+                if (fileRay >= 0 && fileRay < 8 && rankRay >= 0 && rankRay < 8) //checks if we are currently evaluating a valid square
                 {
                     int offsetIndex = (rankRay * 8) + fileRay;
-                    alignMask[squareA][squareB] |= 1ull << offsetIndex;
+                    alignMask[squareA][squareB] |= (uint64_t)1 << offsetIndex;
                 }
             }
         }
     }
-}
+} 
+//6,0
+//5,1
+//1 -1

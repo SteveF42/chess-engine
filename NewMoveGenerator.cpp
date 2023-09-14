@@ -465,7 +465,7 @@ void NewMoveGenerator::generatePawnMoves()
                 uint64_t pinMask = preComputedMoveData.alignMask[targetSquare][friendlyKingSquare];
 
                 // If piece is pinned, and the square it wants to move to is not on same line as the pin, then skip this direction
-                if (isPinned(startSquare) && !containsSquare(pinMask, targetSquare))
+                if (isPinned(startSquare) && preComputedMoveData.alignMask[startSquare][friendlyKingSquare] != preComputedMoveData.alignMask[targetSquare][friendlyKingSquare])
                 {
                     continue;
                 }
