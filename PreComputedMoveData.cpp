@@ -167,18 +167,36 @@ PrecomputedMoveData::PrecomputedMoveData()
     {
         for (int squareB = 0; squareB < 64; squareB++)
         {
-            Coord cA(squareA);
-            Coord cB(squareB);
-            Coord delta = cB - cA;
-            Coord dir((delta.fileIndex > 0) ? 1 : ((delta.fileIndex < 0) ? -1 : 0),(delta.rankIndex > 0) ? 1 : ((delta.rankIndex < 0) ? -1 : 0));
-            // Coord dirOffset = dirOffsets2D[dirIndex];
+            // 0 -1 == east
+            // 0 1 == west
+            // 1 0 == south
+            // -1 0 == north
+            // 1 1 == south west
+            // -1 1 north west
+            // -1 -1 == north east
+            // 1 -1 == south east
+
+            int aFile = squareA % 8;
+            int aRank = squareA / 8; 
+
+            int bFile = squareB % 8;
+            int bRank = squareB / 8; 
+
+            int dirFile = bFile - aFile; 
+            int dirRank = bRank - aRank; 
+
+            dirFile = (dirFile > 0) ? 1 : ((dirFile < 0) ? -1 : 0); // gets the sign bit to determine one of the directions above
+            dirRank = (dirRank > 0) ? 1 : ((dirRank < 0) ? -1 : 0);
 
             for (int i = -8; i < 8; i++)
             {
-                Coord coord = Coord(squareA) + dir * i;
-                if (coord.isValidSquare())
+                int fileRay = aFile + dirFile * i;
+                int rankRay = aRank + dirRank * i;
+
+                if (fileRay >= 0 && fileRay < 64 && rankRay >= 0 && rankRay < 64) //checks if we are currently evaluating a valid square
                 {
-                    alignMask[squareA][squareB] |= 1ul << ((coord.rankIndex * 8) + coord.fileIndex);
+                    int offsetIndex = (rankRay * 8) + fileRay;
+                    alignMask[squareA][squareB] |= 1ull << offsetIndex;
                 }
             }
         }

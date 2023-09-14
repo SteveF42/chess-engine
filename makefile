@@ -10,5 +10,5 @@ clean:
 	rm -f main *.o
 
 run: 
-	./main
+	./main -f r1bq1rk1/ppp2ppp/3bp1n1/8/3PQ3/2N3P1/PP3P1P/R3KBNR w KQ - 3 13
 # -mwindows no debug in link

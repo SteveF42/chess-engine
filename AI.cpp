@@ -74,6 +74,7 @@ void AI::iterativeDeepening()
             std::cout << "Completed search with depth: " << currentDepth << '\n';
         }
         minimax(currentDepth);
+
         if (timeout)
         {
             bestMove = bestMoveThisIteration;

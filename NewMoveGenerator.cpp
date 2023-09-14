@@ -317,7 +317,7 @@ void NewMoveGenerator::generateSlidingPieceMoves()
         uint64_t moveSquares = magic.getrookAttacks(startSquare, allPieces) & legalMask;
         if (isPinned(startSquare))
         {
-            moveSquares &= pinRayBitmask;
+            moveSquares &= preComputedMoveData.alignMask[startSquare][friendlyKingSquare];
         }
 
         while (moveSquares != 0)
@@ -333,7 +333,7 @@ void NewMoveGenerator::generateSlidingPieceMoves()
         uint64_t moveSquares = magic.getBishopAttacks(startSquare, allPieces) & legalMask;
         if (isPinned(startSquare))
         {
-            moveSquares &= pinRayBitmask;
+            moveSquares &= preComputedMoveData.alignMask[startSquare][friendlyKingSquare];
         }
 
         while (moveSquares != 0)
@@ -432,20 +432,18 @@ void NewMoveGenerator::generatePawnMoves()
 
         // pawn attacks
         uint64_t pawnAttack = preComputedMoveData.pawnAttackBitboards[startSquare][friendlyColorIndex];
-        pawnAttack &= board->colorBitboard[opponentColorIndex] & moveTypeMask;
+        pawnAttack &= board->colorBitboard[opponentColorIndex];
 
         if (inCheck)
         {
             pawnAttack &= checkRayBitmask;
         }
-        if (isPinned(startSquare))
-        {
-            pawnAttack &= pinRayBitmask;
-        }
 
         while (pawnAttack != 0)
         {
             int targetSquare = BitBoardUtil::PopLSB(pawnAttack);
+            if(!isPinned(startSquare) || preComputedMoveData.alignMask[startSquare][friendlyKingSquare] == preComputedMoveData.alignMask[targetSquare][friendlyKingSquare])
+
             if (oneStepFromPromotion)
             {
                 makePromotionMoves(startSquare, targetSquare);
@@ -464,9 +462,10 @@ void NewMoveGenerator::generatePawnMoves()
                 int pawnCaptureDir = preComputedMoveData.directionOffsets[preComputedMoveData.pawnAttackDirections[friendlyColorIndex][j]];
                 int targetSquare = startSquare + pawnCaptureDir;
                 Piece *targetPiece = board->getBoard()[targetSquare]->getPiece();
+                uint64_t pinMask = preComputedMoveData.alignMask[targetSquare][friendlyKingSquare];
 
                 // If piece is pinned, and the square it wants to move to is not on same line as the pin, then skip this direction
-                if (isPinned(startSquare) && !containsSquare(pinRayBitmask, targetSquare))
+                if (isPinned(startSquare) && !containsSquare(pinMask, targetSquare))
                 {
                     continue;
                 }
