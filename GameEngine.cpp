@@ -1,6 +1,7 @@
 #include <iostream>
 #include "GameEngine.hpp"
 #include "AI.hpp"
+#include <thread>
 
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
 // this is very very bad, I really shouldn't be doing it this way
@@ -52,7 +53,7 @@ void GameEngine::update()
             playAsWhite = !playAsWhite;
             flippedView = playAsWhite ? 0 : 63;
             pauseMoves = true;
-            std:: cout << (playAsWhite ? "Playing as white" : "Playing as black") << '\n';
+            std::cout << (playAsWhite ? "Playing as white" : "Playing as black") << '\n';
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::V) && event.type == sf::Event::KeyPressed)
         {
@@ -76,22 +77,23 @@ void GameEngine::update()
     this->drawPieces();
     this->movePiece();
     window->display();
-    if (gameBoard->getWhiteToMove() != this->playAsWhite)
-    {
-        if (!pauseMoves)
-        {
 
-            // since AI is a static class I have to manually initialize the bestmove here which is bad
-            aiPlayer->generateBestMove(gameBoard);
-            Move &bestMove = aiPlayer->bestMove;
-            lastMove = bestMove;
-            if (bestMove.start != bestMove.target)
+    if (aiPlayer->getTimeout())
+        if (gameBoard->getWhiteToMove() != this->playAsWhite)
+        {
+            if (!pauseMoves)
             {
-                gameBoard->makeMove(bestMove);
-                gameBoard->moveGeneration.generateMoves(gameBoard);
+                // since AI is a static class I have to manually initialize the bestmove here which is bad
+                aiPlayer->generateBestMove(gameBoard);
+                Move &bestMove = aiPlayer->bestMove;
+                lastMove = bestMove;
+                if (bestMove.start != bestMove.target)
+                {
+                    gameBoard->makeMove(bestMove);
+                    gameBoard->moveGeneration.generateMoves(gameBoard);
+                }
             }
         }
-    }
 }
 
 void GameEngine::placePiece(std::string s)

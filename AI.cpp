@@ -52,10 +52,6 @@ void AI::generateBestMove(Board *ref)
     transPositions = 0;
     qPositions = 0;
     numExtensions = 0;
-
-    clock_t start, stop;
-    // tt->clearTable();
-    // minimax();
     iterativeDeepening();
     std::cout << "Nodes searched: " << positions << '\n';
     std::cout << "Quiet nodes searched: " << qPositions << '\n';
@@ -245,15 +241,15 @@ int AI::searchCaptures(int alpha, int beta)
     for (auto &capture : captures)
     {
         position->makeMove(capture);
-        eval = -searchCaptures(-beta, -alpha);
+        int score = -searchCaptures(-beta, -alpha);
         position->unmakeMove();
         qPositions++;
 
-        if (eval >= beta)
+        if (score >= beta)
             return beta;
-        if (eval > alpha)
+        if (score > alpha)
         {
-            alpha = eval;
+            alpha = score;
         }
     }
     return alpha;
@@ -401,7 +397,7 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         }
         if (move.isEnPassant)
         {
-            moveScoreGuess += 25 * pawnValue;
+            moveScoreGuess += 20 * pawnValue;
         }
         if (move.pawnPromotion)
         {
@@ -428,6 +424,9 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
         }
         if (pieceType != Piece::KING)
         {
+            int toScores = PieceSquareTable::read(pieceType, move.target);
+            int fromScores = PieceSquareTable::read(pieceType, move.start);
+            moveScoreGuess += toScores - fromScores;
             if (BitBoardUtil::containsBit(opponentPawnAttacks, move.target))
             {
                 moveScoreGuess -= 50;

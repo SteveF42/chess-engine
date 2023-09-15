@@ -18,9 +18,9 @@ private:
     const static int INFINITE = 99999999;
     const static int mateScore = 100000;
 
-    const static int TIMEOUT_MILISECONDS = 3000; // 10 seconds
+    const static int TIMEOUT_MILISECONDS = 3500; // 10 seconds
     Board *position;
-    bool timeout;
+    bool timeout = true;
     Move bestMoveThisIteration;
     clock_t timeoutStart;
     TranspositionTable *tt;
@@ -53,6 +53,7 @@ public:
     int transPositions;
     void generateBestMove(Board *ref);
     long moveGenerationTest(int depth, Board *position);
+    bool getTimeout() { return timeout; }
 };
 
 #endif

@@ -31,7 +31,7 @@ struct TTentry
 class TranspositionTable
 {
 private:
-    const static uint64_t TABLESIZE = 0x400000;
+    const static uint64_t TABLESIZE = 0x4FFF00;
 
     TTentry entries[TABLESIZE];
     Board *board;
