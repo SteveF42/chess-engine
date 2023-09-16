@@ -178,7 +178,9 @@ int AI::minimax(int depth /*= MAXDEPTH*/, int depthFromRoot, int alpha /*=-INFIN
 
         if (i >= 3 && extension == 0 && depth >= 3 && !isCapture)
         {
-            const int reduceDepth = 1;
+            int reduceDepth = 1;
+            if (depth > 6)
+                reduceDepth = depth / 3;
             eval = -minimax(depth - 1 - reduceDepth, depthFromRoot + 1, -beta, -alpha);
             // If the evaluation turns out to be better than anything we've found so far, we'll need to redo the
             // search at the full depth to get a more accurate result. Note: this does introduce some danger that

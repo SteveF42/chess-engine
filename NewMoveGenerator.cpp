@@ -397,7 +397,7 @@ void NewMoveGenerator::generatePawnMoves()
             if (board->getBoard()[squareOneForward]->hasNullPiece())
             {
                 // Pawn not pinned, or is moving along line of pin
-                if (!isPinned(startSquare) || containsSquare(pinRayBitmask, squareOneForward))
+                if (!isPinned(startSquare) || preComputedMoveData.alignMask[startSquare][friendlyKingSquare] == preComputedMoveData.alignMask[squareOneForward][friendlyKingSquare])
                 {
                     // Not in check, or pawn is interposing checking piece
                     if (!inCheck || squareIsInCheckRay(squareOneForward))
