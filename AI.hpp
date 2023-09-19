@@ -40,7 +40,7 @@ private:
     int getPieceValue(int piece);
     int searchCaptures(int alpha, int beta);
     int minimax(int depth = MAXDEPTH, int depthFromRoot = 0, int alpha = -INFINITE, int beta = INFINITE);
-    int getMaterialInfo(int colorIndex);
+    float getMaterialInfo(int colorIndex);
     void iterativeDeepening();
     int calculateExtension(const Move &move);
     int evaluatePawns(int friendlyColorIndex);

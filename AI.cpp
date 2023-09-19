@@ -481,7 +481,7 @@ void AI::orderMoves(std::vector<Move> &moveTable, bool useTT)
     quickSort(moveTable, scores, 0, moveTable.size() - 1);
 }
 
-int AI::getMaterialInfo(int colorIndex)
+float AI::getMaterialInfo(int colorIndex)
 {
     auto pieces = position->pieceList.getPieces(colorIndex);
     int numPawns = pieces[PieceList::pawnIndex].size();
