@@ -69,12 +69,11 @@ void NewMoveGenerator::generateKingMoves()
         moves[currentMoveIndex++] = Move(friendlyKingPos, targetSquare, friendlyKing->getPieceTypeRaw());
     }
 
-    getCastleMoves();
+    if (!inCheck && genQuiets)
+        getCastleMoves();
 }
 void NewMoveGenerator::getCastleMoves()
 {
-    if (inCheck || !genQuiets)
-        return;
 
     int currLocation = friendlyKing->getPiecePosition();
     if ((Board::whiteToMove && whiteCastleKingSide && friendlyKing->getPieceColor() == Piece::WHITE) || (!Board::whiteToMove && blackCastleKingSide && friendlyKing->getPieceColor() == Piece::BLACK)) // kingside castle
@@ -442,16 +441,16 @@ void NewMoveGenerator::generatePawnMoves()
         while (pawnAttack != 0)
         {
             int targetSquare = BitBoardUtil::PopLSB(pawnAttack);
-            if(!isPinned(startSquare) || preComputedMoveData.alignMask[startSquare][friendlyKingSquare] == preComputedMoveData.alignMask[targetSquare][friendlyKingSquare])
+            if (!isPinned(startSquare) || preComputedMoveData.alignMask[startSquare][friendlyKingSquare] == preComputedMoveData.alignMask[targetSquare][friendlyKingSquare])
 
-            if (oneStepFromPromotion)
-            {
-                makePromotionMoves(startSquare, targetSquare);
-            }
-            else
-            {
-                moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
-            }
+                if (oneStepFromPromotion)
+                {
+                    makePromotionMoves(startSquare, targetSquare);
+                }
+                else
+                {
+                    moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
+                }
         }
 
         for (int j = 0; j < 2; j++)

@@ -9,6 +9,7 @@ PrecomputedMoveData::PrecomputedMoveData()
     // Calculate knight jumps and available squares for each square on the board.
     // See comments by variable definitions for more info.
     int allKnightJumps[] = {15, 17, -17, -15, 10, -6, 6, -10};
+    uint64_t fileA = 0x0101010101010101;
 
     for (int squareIndex = 0; squareIndex < 64; squareIndex++)
     {
@@ -120,6 +121,22 @@ PrecomputedMoveData::PrecomputedMoveData()
             }
         }
         queenMoves[squareIndex] = rookMoves[squareIndex] | bishopMoves[squareIndex];
+
+        // pawn bitBoardMasks
+        uint64_t adjacentFiles = fileA << std::max(0, file - 1) | fileA << std::min(7, file + 1);
+        uint64_t whiteForward = (UINT64_MAX >> 8 * (8 - rank));
+        uint64_t blackForward = (UINT64_MAX << 8 * (rank + 1));
+
+        whitePassedPawnMask[squareIndex] = ((fileA << file) | adjacentFiles) & whiteForward;
+        blackPassedPawnMask[squareIndex] = ((fileA << file) | adjacentFiles) & blackForward;
+    }
+
+    // adjacent files
+    for (int i = 0; i < 8; i++)
+    {
+        uint64_t left = i > 0 ? fileA << (i - 1) : 0;
+        uint64_t right = i < 7 ? fileA << (i + 1) : 0;
+        adjacentFileMask[i] = left | right;
     }
 
     for (int i = 0; i < 127; i++)
@@ -177,13 +194,13 @@ PrecomputedMoveData::PrecomputedMoveData()
             // 1 -1 == south east
 
             int aFile = squareA % 8;
-            int aRank = squareA / 8; 
+            int aRank = squareA / 8;
 
             int bFile = squareB % 8;
-            int bRank = squareB / 8; 
+            int bRank = squareB / 8;
 
-            int dirFile = bFile - aFile; 
-            int dirRank = bRank - aRank; 
+            int dirFile = bFile - aFile;
+            int dirRank = bRank - aRank;
 
             dirFile = (dirFile > 0) ? 1 : ((dirFile < 0) ? -1 : 0); // gets the sign bit to determine one of the directions above
             dirRank = (dirRank > 0) ? 1 : ((dirRank < 0) ? -1 : 0);
@@ -193,7 +210,7 @@ PrecomputedMoveData::PrecomputedMoveData()
                 int fileRay = aFile + dirFile * i;
                 int rankRay = aRank + dirRank * i;
 
-                if (fileRay >= 0 && fileRay < 8 && rankRay >= 0 && rankRay < 8) //checks if we are currently evaluating a valid square
+                if (fileRay >= 0 && fileRay < 8 && rankRay >= 0 && rankRay < 8) // checks if we are currently evaluating a valid square
                 {
                     int offsetIndex = (rankRay * 8) + fileRay;
                     alignMask[squareA][squareB] |= (uint64_t)1 << offsetIndex;
@@ -201,7 +218,7 @@ PrecomputedMoveData::PrecomputedMoveData()
             }
         }
     }
-} 
-//6,0
-//5,1
-//1 -1
+}
+// 6,0
+// 5,1
+// 1 -1

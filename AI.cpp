@@ -278,9 +278,11 @@ int AI::evaluate()
     whiteEval += mopUpEval(PieceList::whiteIndex, PieceList::blackIndex, whiteMaterial, blackMaterial, blackEndgamePhaseWeight);
     blackEval += mopUpEval(PieceList::blackIndex, PieceList::whiteIndex, blackMaterial, whiteMaterial, whiteEndgamePhaseWeight);
 
+    whiteEval += evaluatePawns(PieceList::whiteIndex);
+    blackEval += evaluatePawns(PieceList::blackIndex);
+
     int eval = whiteEval - blackEval;
     int perspective = Board::whiteToMove ? 1 : -1;
-
     return eval * perspective;
 }
 
@@ -343,6 +345,41 @@ float AI::endgamePhaseWeight(int materialWithNoPawns)
     const float endgameMaterialStart = rookValue * 2 + bishopValue + knightValue;
     const float multiplier = 1 / endgameMaterialStart;
     return 1 - std::min(1.0f, (materialWithNoPawns * multiplier));
+}
+
+int AI::evaluatePawns(int friendlyColorIndex)
+{
+    int opponentColorIndex = 1 - friendlyColorIndex;
+    bool isWhite = friendlyColorIndex == PieceList::whiteIndex;
+    auto friendlyPawns = position->bitboards[friendlyColorIndex][PieceList::pawnIndex];
+    auto opponentPawns = position->bitboards[opponentColorIndex][PieceList::pawnIndex];
+    uint64_t *mask = isWhite ? position->moveGeneration.preComputedMoveData.whitePassedPawnMask : position->moveGeneration.preComputedMoveData.blackPassedPawnMask;
+
+    auto pawnList = position->pieceList.getPieces(friendlyColorIndex)[PieceList::pawnIndex];
+    int bonus = 0;
+    int isolatedPawns = 0;
+
+    for (const auto pawn : pawnList)
+    {
+        int square = pawn->getPiecePosition();
+        uint64_t passedMask = mask[square];
+
+        // ands the two files left and right of pawn with opponent pawns to check if anything is infront
+        if ((opponentPawns & passedMask) == 0)
+        {
+            int rank = square / 8;
+            int squaresToPromotion = isWhite ? rank : 7 - rank;
+            bonus += pawnBonuses[squaresToPromotion];
+        }
+
+        // isolated pawn bad
+        int file = square % 8;
+        if ((friendlyPawns & position->moveGeneration.preComputedMoveData.adjacentFileMask[file]) == 0)
+        {
+            isolatedPawns += 1;
+        }
+    }
+    return bonus + isolatedPawnCountPenalty[isolatedPawns];
 }
 
 int AI::countMaterial(int pieceIndex)

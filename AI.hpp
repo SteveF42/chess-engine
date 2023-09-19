@@ -17,6 +17,8 @@ private:
     const static int MAXDEPTH = 4;
     const static int INFINITE = 99999999;
     const static int mateScore = 100000;
+    int pawnBonuses[7] = {0, 120, 80, 50, 30, 15, 15};
+    int isolatedPawnCountPenalty[9] = {0, -10, -25, -50, -75, -75, -75, -75, -75};
 
     const static int TIMEOUT_MILISECONDS = 4000; // 10 seconds
     Board *position;
@@ -41,6 +43,7 @@ private:
     int getMaterialInfo(int colorIndex);
     void iterativeDeepening();
     int calculateExtension(const Move &move);
+    int evaluatePawns(int friendlyColorIndex);
 
 public:
     AI(Board *position)

@@ -12,18 +12,12 @@ public:
     // First 4 are orthogonal, last 4 are diagonals (E, W, S, N, SW, NE, SE, NW)
     const int directionOffsets[8] = {1, -1, 8, -8, 7, -7, 9, -9};
 
-    // Stores number of moves available in each of the 8 directions for every square on the board
-    // Order of directions is: N, S, W, E, NW, SE, NE, SW
-    // So for example, if availableSquares[0][1] == 7...
-    // that means that there are 7 squares to the north of b1 (the square with index 1 in board array)
     int numSquaresToEdge[64][8];
 
-    // Stores array of indices for each square a knight can land on from any square on the board
-    // So for example, knightMoves[0] is equal to {10, 17}, meaning a knight on a1 can jump to c2 and b3
     std::vector<uint8_t> knightMoves[64];
     std::vector<uint8_t> kingMoves[64];
 
-    // Pawn attack directions for white and black (NW, NE; SW SE)
+    // Pawn attack directions
     uint8_t pawnAttackDirections[2][2] = {
         {7, 5},
         {4, 6}};
@@ -37,6 +31,11 @@ public:
     uint64_t rookMoves[64];
     uint64_t bishopMoves[64];
     uint64_t queenMoves[64];
+
+    uint64_t whitePassedPawnMask[64];
+    uint64_t blackPassedPawnMask[64];
+
+    uint64_t adjacentFileMask[8];
 
     // Aka manhattan distance (answers how many moves for a rook to get from square a to square b)
     int orthogonalDistance[64][64];
