@@ -23,6 +23,7 @@ private:
     const static int TIMEOUT_MILISECONDS = 4000; // 10 seconds
     Board *position;
     bool timeout = true;
+    bool playBookMove = false;
     Move bestMoveThisIteration;
     clock_t timeoutStart;
     TranspositionTable *tt;

@@ -1,7 +1,6 @@
 #include <iostream>
 #include "GameEngine.hpp"
 #include "AI.hpp"
-#include <thread>
 
 std::map<std::string, sf::Texture *> GameEngine::textures = {};
 // this is very very bad, I really shouldn't be doing it this way
@@ -9,7 +8,41 @@ std::map<std::string, sf::Texture *> GameEngine::textures = {};
 bool flag = false;
 bool placed = false;
 
+GameEngine::GameEngine(std::string fenString, bool playAsWhite /* = false*/)
+{
+    this->playAsWhite = playAsWhite;
+    gameBoard = ReadFen::readFenString(fenString);
+    aiPlayer = new AI(gameBoard);
+    loadTextures();
+    loadSprites();
+    flippedView = playAsWhite ? 0 : 63;
+    (void)gameBoard->moveGeneration.generateMoves(gameBoard);
+    copyPieces();
+}
+
 void GameEngine::update()
+{
+
+    // if (gameBoard->moveGeneration.getGameOver())
+    // {
+    //     window->setActive(false);
+    //     std::cout<<"Game Over " << (gameBoard->getWhiteToMove() ? "Black Wins" : "White Wins") << '\n';
+    //     return;
+    // }
+    this->events();
+    window->setSize(sf::Vector2u(window->getSize().x, window->getSize().x));
+    window->clear();
+
+    this->drawBoard();
+    this->drawLastMove();
+    this->drawHighLightedSquare();
+    this->drawPieces();
+    this->movePiece();
+    this->aiMove();
+    window->display();
+}
+
+void GameEngine::events()
 {
     sf::Event event;
     while (window->pollEvent(event))
@@ -23,7 +56,7 @@ void GameEngine::update()
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
             placed = false;
-            if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
+            if (highLightedSquare != nullptr && pieces[highLightedSquare->getSquarePosition()] != -1)
             {
                 placePiece("");
             }
@@ -36,15 +69,17 @@ void GameEngine::update()
         }
         else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
         {
-            if (highLightedSquare != nullptr && !highLightedSquare->hasNullPiece())
+            if (highLightedSquare != nullptr && pieces[highLightedSquare->getSquarePosition()] != -1)
             {
                 placePiece("drop");
             }
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && event.type == sf::Event::KeyPressed)
         {
+            // undo move
             lastMove = this->gameBoard->unmakeMove();
             gameBoard->moveGeneration.generateMoves(gameBoard);
+            copyPieces();
             pauseMoves = true;
         }
         else if (sf::Keyboard::isKeyPressed(sf::Keyboard::B) && event.type == sf::Event::KeyPressed)
@@ -61,36 +96,34 @@ void GameEngine::update()
             flippedView = std::abs(63 - flippedView);
         }
     }
-    // if (gameBoard->moveGeneration.getGameOver())
-    // {
-    //     window->setActive(false);
-    //     std::cout<<"Game Over " << (gameBoard->getWhiteToMove() ? "Black Wins" : "White Wins") << '\n';
-    //     return;
-    // }
+}
 
-    window->setSize(sf::Vector2u(window->getSize().x, window->getSize().x));
-    window->clear();
-
-    this->drawBoard();
-    this->drawLastMove();
-    this->drawHighLightedSquare();
-    this->drawPieces();
-    this->movePiece();
-    window->display();
-
-    if (gameBoard->getWhiteToMove() != this->playAsWhite)
+void GameEngine::aiMove()
+{
+    if (gameBoard->getWhiteToMove() != this->playAsWhite && !pauseMoves)
     {
-        if (!pauseMoves)
+        if (moveSearch == nullptr && !search)
         {
-            // since AI is a static class I have to manually initialize the bestmove here which is bad
-            aiPlayer->generateBestMove(gameBoard);
+            // dude I don't even know if this is safe
+            // I just want the UI to not hang when the AI does its little search thing
+            this->moveSearch = new std::thread([this]
+                                               { this->aiPlayer->generateBestMove(this->gameBoard); });
+            search = true;
+        }
+        else if (aiPlayer->getTimeout() && search)
+        {
+            this->moveSearch->join();
             Move &bestMove = aiPlayer->bestMove;
-            lastMove = bestMove;
             if (bestMove.start != bestMove.target)
             {
                 gameBoard->makeMove(bestMove);
                 gameBoard->moveGeneration.generateMoves(gameBoard);
+                lastMove = bestMove;
+                copyPieces();
             }
+            delete this->moveSearch;
+            this->moveSearch = nullptr;
+            search = false;
         }
     }
 }
@@ -104,22 +137,23 @@ void GameEngine::placePiece(std::string s)
     int rank = squarePosition / 8;
     // validate the move
 
-    Piece *piece = highLightedSquare->getPiece();
-    int startPos = piece->getPiecePosition();
+    int pieceType = pieces[highLightedSquare->getSquarePosition()];
+    int startPos = highLightedSquare->getSquarePosition();
     // pawn promotion
-    bool validMove = gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition);
+
+    bool validMove = !search ? gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition) : false;
     if (validMove)
     {
-        sf::Sprite &sprite = pieceSprites[piece->getPieceTypeRaw()];
+        sf::Sprite &sprite = pieceSprites[pieceType];
         sprite.setPosition(file * GameEngine::SQUARESIZE, rank * GameEngine::SQUARESIZE);
-        if (piece->getPieceType() == Piece::PAWN)
+        if (Piece::getPieceType(pieceType) == Piece::PAWN)
         {
-            if (piece->getPieceColor() == Piece::WHITE && rank == 0)
+            if (Piece::getPieceColor(pieceType) == Piece::WHITE && rank == 0)
             {
                 // pawn promotion idk
                 drawPromotionPieces(squarePosition, Piece::WHITE);
             }
-            else if (piece->getPieceColor() == Piece::BLACK && rank == 7)
+            else if (Piece::getPieceColor(pieceType) == Piece::BLACK && rank == 7)
             {
                 // pawn promotion idk
                 drawPromotionPieces(squarePosition, Piece::BLACK);
@@ -133,13 +167,14 @@ void GameEngine::placePiece(std::string s)
         pauseMoves = false;
         // I have to break out the generate moves function from the board class to take into account the potential pawn promotion
         gameBoard->moveGeneration.generateMoves(gameBoard);
+        copyPieces();
     }
     else
     {
         int homeSquare = highLightedSquare->getSquarePosition();
         int homeFile = homeSquare % 8;
         int homeRank = homeSquare / 8;
-        sf::Sprite &sprite = pieceSprites[piece->getPieceTypeRaw()];
+        sf::Sprite &sprite = pieceSprites[pieceType];
         sprite.setPosition(homeFile * SQUARESIZE, homeRank * SQUARESIZE);
         if (s == "drop" && flag && squarePosition == highLightedSquare->getSquarePosition())
         {
@@ -180,14 +215,13 @@ void GameEngine::drawLastMove()
 void GameEngine::selectPieceOrSquare()
 {
 
-    Square **board = gameBoard->getBoard();
     sf::Vector2u windowSize = window->getSize();
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     int squarePosition = getSquarePosition();
     if (squarePosition >= 64 || squarePosition < 0)
         return;
 
-    if (board[squarePosition]->hasNullPiece())
+    if (pieces[squarePosition] == -1)
     {
         highLightedSquare = nullptr;
         flag = false;
@@ -197,10 +231,7 @@ void GameEngine::selectPieceOrSquare()
     if (highLightedSquare != nullptr && highLightedSquare->getSquarePosition() != squarePosition)
         flag = false;
 
-    Piece *piece = board[squarePosition]->getPiece();
-
-    highLightedSquare = nullptr;
-    highLightedSquare = board[squarePosition];
+    highLightedSquare = gameBoard->getBoard()[squarePosition];
 }
 
 void GameEngine::drawHighLightedSquare()
@@ -219,10 +250,10 @@ void GameEngine::drawHighLightedSquare()
     rectangle.setFillColor(RED);
     window->draw(rectangle);
 
-    if (highLightedSquare->hasNullPiece())
+    if (pieces[highLightedSquare->getSquarePosition()] == -1)
         return;
 
-    std::vector<Move> moves = gameBoard->getPieceMoves(highLightedSquare->getSquarePosition());
+    std::vector<Move> moves = getPieceMoves(highLightedSquare->getSquarePosition());
 
     for (const auto &i : moves)
     {
@@ -241,7 +272,7 @@ void GameEngine::drawHighLightedSquare()
 
 void GameEngine::movePiece()
 {
-    if (highLightedSquare == nullptr || highLightedSquare->hasNullPiece())
+    if (highLightedSquare == nullptr || pieces[highLightedSquare->getSquarePosition()] == -1)
         return;
 
     sf::Vector2 mousePosition = sf::Mouse::getPosition(*window);
@@ -251,8 +282,12 @@ void GameEngine::movePiece()
     // this looks disgusting but it breaks the window resolution down in ratios to check the current square being highlighted
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
     {
-        Piece *piece = highLightedSquare->getPiece();
-        sf::Sprite &clickedSprite = pieceSprites[piece->getPieceTypeRaw()];
+        int piece = pieces[highLightedSquare->getSquarePosition()];
+        if (piece == -1)
+        {
+            return;
+        }
+        sf::Sprite &clickedSprite = pieceSprites[piece];
         int offset = clickedSprite.getGlobalBounds().width / 2;
         clickedSprite.setPosition(pos.x - offset, pos.y - offset);
         window->draw(clickedSprite);
@@ -281,7 +316,6 @@ void GameEngine::drawBoard()
 void GameEngine::drawPieces()
 {
 
-    Square **arr = gameBoard->getBoard();
     for (int rank = 0; rank < BOARDSIZE; rank++)
     {
         for (int file = 0; file < BOARDSIZE; file++)
@@ -291,11 +325,11 @@ void GameEngine::drawPieces()
 
             if (highLightedSquare != nullptr && highLightedSquare->getSquarePosition() == position && placed == false)
                 continue;
-            if (arr[position]->hasNullPiece())
+            if (pieces[position] == -1)
                 continue;
 
-            Piece *piece = arr[position]->getPiece();
-            sf::Sprite &sprite = pieceSprites[piece->getPieceTypeRaw()];
+            int piece = pieces[position];
+            sf::Sprite &sprite = pieceSprites[piece];
             float scale = GameEngine::SQUARESIZE / sprite.getLocalBounds().height;
             sprite.setScale(scale, scale);
             sprite.setPosition(file * SQUARESIZE, rank * SQUARESIZE);
@@ -502,4 +536,35 @@ void GameEngine::loadTextures()
     GameEngine::textures["wb"] = w_bishop;
     GameEngine::textures["wr"] = w_rook;
     GameEngine::textures["wp"] = w_pawn;
+}
+
+void GameEngine::copyPieces()
+{
+    for (int i = 0; i < 64; i++)
+    {
+        Piece *piece = gameBoard->getBoard()[i]->getPiece();
+        if (piece != nullptr)
+        {
+            pieces[i] = piece->getPieceTypeRaw();
+        }
+        else
+        {
+            pieces[i] = -1;
+        }
+    }
+    movesCopy = gameBoard->moveGeneration.getMoves();
+}
+
+std::vector<Move> GameEngine::getPieceMoves(int idx)
+{
+    std::vector<Move> pieceMoves;
+
+    for (auto &move : movesCopy)
+    {
+        if (move.start == idx)
+        {
+            pieceMoves.push_back(move);
+        }
+    }
+    return pieceMoves;
 }

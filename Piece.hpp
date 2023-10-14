@@ -11,9 +11,6 @@ private:
     static const int blackMask = 0b10000;
     static const int whiteMask = 0b01000;
     static const int colourMask = whiteMask | blackMask;
-    sf::Sprite *sprite = nullptr;
-    sf::Sprite *previousSprite = nullptr;
-    sf::Vector2f spritePosition;
 
     int pieceType;
     int currentPosition;
@@ -33,15 +30,6 @@ public:
     static int isColor(int piece, int color) { return (piece & colourMask) == color; }
 
     Piece(int pieceType, int piecePosition);
-    void revertSprite()
-    {
-        if (previousSprite == nullptr)
-            return;
-
-        previousSprite->setPosition(sprite->getPosition());
-        delete sprite;
-        sprite = previousSprite;
-    }
 
     int getPieceType()
     {

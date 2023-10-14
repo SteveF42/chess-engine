@@ -52,10 +52,8 @@ private:
 
 public:
     static bool whiteToMove;
-    // first four offsets are rook type moves and the second are bishop like moves, all can be used for the queen
     Move unmakeMove();
     void makeMove(Move move);
-    std::vector<Move> getPieceMoves(int idx);
     bool validateMove(int startIdx, int target);
     void initializeBitBoards();
 

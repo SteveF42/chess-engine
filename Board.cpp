@@ -10,20 +10,6 @@ void Board::setWhiteCastleKingSide(bool t) { moveGeneration.whiteCastleKingSide 
 void Board::setBlackCastleQueenSide(bool t) { moveGeneration.blackCastleQueenSide = t; }
 void Board::setWhiteCastleQueenSide(bool t) { moveGeneration.whiteCastleQueenSide = t; }
 
-std::vector<Move> Board::getPieceMoves(int idx)
-{
-    std::vector<Move> pieceMoves;
-
-    for (auto &move : moveGeneration.getMoves())
-    {
-        if (move.start == idx)
-        {
-            pieceMoves.push_back(move);
-        }
-    }
-    return pieceMoves;
-}
-
 bool Board::validateMove(int startIdx, int target)
 {
     for (auto &move : moveGeneration.getMoves())

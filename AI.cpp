@@ -52,7 +52,14 @@ void AI::generateBestMove(Board *ref)
     transPositions = 0;
     qPositions = 0;
     numExtensions = 0;
-    iterativeDeepening();
+    if (playBookMove)
+    {
+        //add something to find opening moves for current side
+    }
+    else
+    {
+        iterativeDeepening();
+    }
     std::cout << "Nodes searched: " << positions << '\n';
     std::cout << "Quiet nodes searched: " << qPositions << '\n';
     std::cout << "Transposition table hits: " << transPositions << '\n';
@@ -77,6 +84,7 @@ void AI::iterativeDeepening()
             return;
         }
     }
+    timeout = true;
 }
 long AI::moveGenerationTest(int depth, Board *position)
 {

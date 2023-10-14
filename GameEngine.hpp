@@ -5,6 +5,7 @@
 #include "Board.hpp"
 #include "Move.hpp"
 #include "AI.hpp"
+#include <thread>
 #include <map>
 
 class GameEngine
@@ -22,10 +23,16 @@ private:
     bool pauseMoves = false;
     bool playAsWhite;
     int flippedView;
+    bool search = false;
 
     std::map<int, sf::Sprite> pieceSprites;
     Move lastMove = Move(-1, -1, -1);
-
+    std::thread* moveSearch = nullptr;
+    int pieces[64];
+    std::vector<Move> movesCopy;
+    
+    std::vector<Move> getPieceMoves(int idx);
+    void copyPieces();
     int getSquarePosition();
     static void loadTextures();
     void loadSprites();
@@ -37,29 +44,15 @@ private:
     void drawHighLightedSquare();
     void drawLastMove();
     void drawPromotionPieces(int file, int color);
+    void aiMove();
+    void events();
     Square *highLightedSquare = nullptr;
     AI *aiPlayer;
-
 public:
+    GameEngine(std::string fenString, bool playAsWhite = true);
     static const int BOARDSIZE = 8;
     const float SQUARESIZE = (int)(window->getSize().x / BOARDSIZE);
     static std::map<std::string, sf::Texture *> textures;
-
-    GameEngine(std::string fenString, bool playAsWhite = true)
-    {
-        this->playAsWhite = playAsWhite;
-        gameBoard = ReadFen::readFenString(fenString);
-        aiPlayer = new AI(gameBoard);
-        loadTextures();
-        loadSprites();
-
-        flippedView = playAsWhite ? 0 : 63;
-
-        (void)gameBoard->moveGeneration.generateMoves(gameBoard);
-        // Move a(52,44,Piece::PAWN | Piece::WHITE);
-        // gameBoard->makeMove(a);
-    }
-
     bool isActive() { return window->isOpen(); }
 
     void update();
