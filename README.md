@@ -12,8 +12,10 @@ chess engine made with C++ and SFML
   <li>
     run the makeFile to compile and run the program. Or just run the commands within the makeFile
   </li>
+  
 </ol>
 https://www.sfml-dev.org/tutorials/2.6/start-vc.php
+Use V to change the view of the board 
 
-![Screenshot 2023-10-16 165204](https://github.com/SteveF42/chess-engine/assets/54603983/96cabc1c-f1ba-4369-849a-b55903889c89)
-![Screenshot 2023-08-01 022020](https://github.com/SteveF42/chess-engine/assets/54603983/c019a0fe-bab9-482e-8e18-23faf7ec27cc)
+![Screenshot ![Screenshot 2023-10-16 170446](https://github.com/SteveF42/chess-engine/assets/54603983/54b5c506-44dd-4bcc-af55-125c5ad92955)
+![Screenshot 2023-10-16 170713](https://github.com/SteveF42/chess-engine/assets/54603983/12916645-2365-42f9-acf9-6c62996ee67a)
