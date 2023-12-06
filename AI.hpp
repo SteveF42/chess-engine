@@ -55,8 +55,8 @@ public:
     Move bestMove;
     int positions;
     int transPositions;
-    void generateBestMove(Board *ref);
-    long moveGenerationTest(int depth, Board *position);
+    void generateBestMove();
+    long moveGenerationTest(int depth);
     bool getTimeout() { return timeout; }
 };
 

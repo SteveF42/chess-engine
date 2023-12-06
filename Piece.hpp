@@ -1,6 +1,5 @@
 #ifndef Piece_H
 #define Piece_H
-#include <SFML/Graphics.hpp>
 #include <iostream>
 
 class Piece

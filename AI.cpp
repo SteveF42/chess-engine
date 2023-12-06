@@ -43,10 +43,8 @@ void quickSort(std::vector<Move> &moves, int *scores, int low, int high)
     }
 }
 
-void AI::generateBestMove(Board *ref)
+void AI::generateBestMove()
 {
-
-    position = ref;
     bestMove = Move();
     positions = 0;
     transPositions = 0;
@@ -86,7 +84,7 @@ void AI::iterativeDeepening()
     }
     timeout = true;
 }
-long AI::moveGenerationTest(int depth, Board *position)
+long AI::moveGenerationTest(int depth)
 {
     if (depth == 0)
         return 1;
@@ -97,7 +95,7 @@ long AI::moveGenerationTest(int depth, Board *position)
     for (auto &move : moves)
     {
         position->makeMove(move);
-        numPositions += moveGenerationTest(depth - 1, position);
+        numPositions += moveGenerationTest(depth - 1);
         bestMove = move;
         position->unmakeMove();
     }

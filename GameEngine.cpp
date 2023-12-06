@@ -50,9 +50,6 @@ void GameEngine::events()
         if (event.type == sf::Event::Closed)
             window->close();
 
-        // if (!gameBoard->getWhiteToMove() && !pauseMoves)
-        //     continue;
-
         if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
         {
             placed = false;
@@ -74,7 +71,7 @@ void GameEngine::events()
                 placePiece("drop");
             }
         }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && event.type == sf::Event::KeyPressed)
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && event.type == sf::Event::KeyPressed && !search)
         {
             // undo move
             lastMove = this->gameBoard->unmakeMove();
@@ -107,7 +104,7 @@ void GameEngine::aiMove()
             // dude I don't even know if this is safe
             // I just want the UI to not hang when the AI does its little search thing
             this->moveSearch = new std::thread([this]
-                                               { this->aiPlayer->generateBestMove(this->gameBoard); });
+                                               { this->aiPlayer->generateBestMove(); });
             search = true;
         }
         else if (aiPlayer->getTimeout() && search)
@@ -307,6 +304,12 @@ void GameEngine::drawBoard()
             if ((file + rank) % 2 == 0)
             {
                 rectangle.setFillColor(DARKSQUARE);
+            }
+            if(file == 0){
+                //draw letters
+            }
+            if (rank == 0){
+                //draw numbers
             }
             window->draw(rectangle);
         }

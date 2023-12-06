@@ -11,4 +11,5 @@ clean:
 
 run: 
 	./main
+
 # -mwindows no debug in link

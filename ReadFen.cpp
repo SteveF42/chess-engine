@@ -3,7 +3,6 @@
 #include "Board.hpp"
 #include <string>
 #include <iostream>
-#include "GameEngine.hpp"
 #include <vector>
 
 const std::string ReadFen::startingString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
