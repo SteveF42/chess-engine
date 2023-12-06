@@ -7,18 +7,15 @@
 TEST_CASE("Zobrist key generation", "[Zobrist]")
 {
     Board *board = ReadFen::readFenString(ReadFen::startingString);
-    // pawn moves
-    SECTION("pawn moves")
+    AI ai(board);
+    // generates random moves from the AI and tests against the actual generated zobrist
+    for (int i = 0; i < 5; i++)
     {
-        // 1 pawn move
-        Move move(50, 42, Piece::PAWN);
-        board->makeMove(move);
-        REQUIRE(board->getZobristKey() == board->zobrist.generateZobristKey(board));
-        // 2 move forward
-        move = Move(11, 26, Piece::PAWN);
-        board->makeMove(move);
+        ai.generateBestMove();
+        board->makeMove(ai.bestMove);
         REQUIRE(board->getZobristKey() == board->zobrist.generateZobristKey(board));
     }
+
     delete board;
 }
 
