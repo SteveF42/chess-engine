@@ -246,6 +246,11 @@ void NewMoveGenerator::calculateAttackData()
 
     opponentAttackMapNoPawns = opponentSlidingAttackMap | opponentKnightAttacks | preComputedMoveData.kingAttackBitboards[enemyKingSquare];
     opponentAttackMap = opponentAttackMapNoPawns | opponentPawnAttackMap;
+
+    if (!inCheck)
+    {
+        checkRayBitmask = UINT64_MAX;
+    }
 }
 
 void NewMoveGenerator::genSlidingAttackMap()
@@ -377,8 +382,32 @@ void NewMoveGenerator::generatePawnMoves()
     auto myPawns = board->pieceList.getPieces(friendlyColorIndex)[PieceList::pawnIndex];
     int friendlyKingSquare = friendlyKing->getPiecePosition();
     int pawnOffset = (friendlyColor == Piece::WHITE) ? -8 : 8;
-    int startRank = (Board::whiteToMove) ? 6 : 1;
-    int finalRankBeforePromotion = (Board::whiteToMove) ? 1 : 6;
+    int startRank = (isWhiteToMove) ? 6 : 1;
+    int finalRankBeforePromotion = (isWhiteToMove) ? 1 : 6;
+
+    if (board->moveGeneration.possibleEnPassant != NewMoveGenerator::noEnPessant)
+    {
+        int targetSquare = board->moveGeneration.possibleEnPassant;
+        int pawnSquare = targetSquare - pawnOffset;
+        uint64_t pawns = board->bitboards[friendlyColorIndex][PieceList::pawnIndex];
+
+        if (BitBoardUtil::containsBit(checkRayBitmask, pawnSquare))
+        {
+            uint64_t pawnsThatCanCapture = pawns & BitBoardUtil::pawnAttacks((uint64_t)1 << targetSquare, !isWhiteToMove);
+
+            while (pawnsThatCanCapture != 0)
+            {
+                int startSquare = BitBoardUtil::PopLSB(pawnsThatCanCapture);
+                if (!isPinned(startSquare) || preComputedMoveData.alignMask[startSquare][friendlyKingSquare] == preComputedMoveData.alignMask[targetSquare][friendlyKingSquare])
+                {
+                    if (!inCheckAfterEnPassant(startSquare, targetSquare, pawnSquare))
+                    {
+                        moves[currentMoveIndex++] = Move(startSquare, targetSquare, board->getBoard()[startSquare]->getPiece()->getPieceTypeRaw(), true);
+                    }
+                }
+            }
+        }
+    }
 
     for (int i = 0; i < myPawns.size(); i++)
     {
@@ -417,11 +446,14 @@ void NewMoveGenerator::generatePawnMoves()
                         int squareTwoForward = squareOneForward + pawnOffset;
                         if (board->getBoard()[squareTwoForward]->hasNullPiece())
                         {
-                            // Not in check, or pawn is interposing checking piece
-                            if (!inCheck || squareIsInCheckRay(squareTwoForward))
+                            if (!isPinned(startSquare) || preComputedMoveData.alignMask[startSquare][friendlyKingSquare] == preComputedMoveData.alignMask[squareOneForward][friendlyKingSquare])
                             {
-                                // flag en pessent right here
-                                moves[currentMoveIndex++] = Move(startSquare, squareTwoForward, pawnPiece->getPieceTypeRaw());
+                                // Not in check, or pawn is interposing checking piece
+                                if (!inCheck || squareIsInCheckRay(squareTwoForward))
+                                {
+                                    // flag en pessent right here
+                                    moves[currentMoveIndex++] = Move(startSquare, squareTwoForward, pawnPiece->getPieceTypeRaw());
+                                }
                             }
                         }
                     }
@@ -452,34 +484,6 @@ void NewMoveGenerator::generatePawnMoves()
                     moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw());
                 }
         }
-
-        for (int j = 0; j < 2; j++)
-        {
-            // Check if square exists diagonal to pawn
-            if (preComputedMoveData.numSquaresToEdge[startSquare][preComputedMoveData.pawnAttackDirections[friendlyColorIndex][j]] > 0)
-            {
-                int pawnCaptureDir = preComputedMoveData.directionOffsets[preComputedMoveData.pawnAttackDirections[friendlyColorIndex][j]];
-                int targetSquare = startSquare + pawnCaptureDir;
-                Piece *targetPiece = board->getBoard()[targetSquare]->getPiece();
-                uint64_t pinMask = preComputedMoveData.alignMask[targetSquare][friendlyKingSquare];
-
-                // If piece is pinned, and the square it wants to move to is not on same line as the pin, then skip this direction
-                if (isPinned(startSquare) && preComputedMoveData.alignMask[startSquare][friendlyKingSquare] != preComputedMoveData.alignMask[targetSquare][friendlyKingSquare])
-                {
-                    continue;
-                }
-
-                // Capture en-passant
-                if (targetSquare == possibleEnPassant)
-                {
-                    int epCapturedPawnSquare = targetSquare + ((Board::whiteToMove) ? 8 : -8);
-                    if (!inCheckAfterEnPassant(startSquare, targetSquare, epCapturedPawnSquare))
-                    {
-                        moves[currentMoveIndex++] = Move(startSquare, targetSquare, myPawns[i]->getPieceTypeRaw(), true);
-                    }
-                }
-            }
-        }
     }
 }
 void NewMoveGenerator::makePromotionMoves(int start, int target)
@@ -506,77 +510,15 @@ void NewMoveGenerator::makePromotionMoves(int start, int target)
 
 bool NewMoveGenerator::inCheckAfterEnPassant(int startSquare, int targetSquare, int epCapturedPawnSquare)
 {
-    // Update board to reflect en-passant capture
-    Piece *movedPawn = board->getBoard()[startSquare]->getPiece();
-    Piece *capturedPawn = board->getBoard()[epCapturedPawnSquare]->getPiece();
-    board->getBoard()[targetSquare]->setPiece(movedPawn);
-    board->getBoard()[startSquare]->setPiece(nullptr);
-    board->getBoard()[epCapturedPawnSquare]->setPiece(nullptr);
+    uint64_t enemyOrtho = board->bitboards[opponentColorIndex][PieceList::queenIndex] |
+                          board->bitboards[opponentColorIndex][PieceList::rookIndex] |
+                          board->bitboards[opponentColorIndex][PieceList::bishopIndex];
 
-    bool inCheckAfterEpCapture = false;
-    if (squareAttackedAfterEPCapture(epCapturedPawnSquare, startSquare))
+    if (enemyOrtho != 0)
     {
-        inCheckAfterEpCapture = true;
+        uint64_t maskedBlockers = (allPieces ^ ((uint64_t)1 << epCapturedPawnSquare | (uint64_t)1 << startSquare | (uint64_t)1 << targetSquare));
+        uint64_t rookattacks = magic.getrookAttacks(friendlyKing->getPiecePosition(), maskedBlockers);
+        return (rookattacks & enemyOrtho) != 0;
     }
-
-    // Undo change to board
-    board->getBoard()[startSquare]->setPiece(movedPawn);
-    board->getBoard()[targetSquare]->setPiece(nullptr);
-    board->getBoard()[epCapturedPawnSquare]->setPiece(capturedPawn);
-    return inCheckAfterEpCapture;
-}
-
-bool NewMoveGenerator::squareAttackedAfterEPCapture(int epCaptureSquare, int capturingPawnStartSquare)
-{
-    int friendlyKingSquare = friendlyKing->getPiecePosition();
-    if (containsSquare(opponentAttackMapNoPawns, friendlyKingSquare))
-    {
-        return true;
-    }
-
-    // Loop through the horizontal direction towards ep capture to see if any enemy piece now attacks king
-    int dirIndex = (epCaptureSquare < friendlyKingSquare) ? 1 : 0;
-    for (int i = 0; i < preComputedMoveData.numSquaresToEdge[friendlyKingSquare][dirIndex]; i++)
-    {
-        int squareIndex = friendlyKingSquare + preComputedMoveData.directionOffsets[dirIndex] * (i + 1);
-        Piece *piece = board->getBoard()[squareIndex]->getPiece();
-        if (piece != nullptr)
-        {
-            // Friendly piece is blocking view of this square from the enemy.
-            if (piece->getPieceColor() == friendlyColor)
-            {
-                break;
-            }
-            // This square contains an enemy piece
-            else
-            {
-                if (piece->getPieceType() == Piece::ROOK || piece->getPieceType() == Piece::QUEEN)
-                {
-                    return true;
-                }
-                else
-                {
-                    // This piece is not able to move in the current direction, and is therefore blocking any checks along this line
-                    break;
-                }
-            }
-        }
-    }
-
-    // check if enemy pawn is contro lling this square (can't use pawn attack bitboard, because pawn has been captured)
-    for (int i = 0; i < 2; i++)
-    {
-        // Check if square exists diagonal to friendly king from which enemy pawn could be attacking it
-        if (preComputedMoveData.numSquaresToEdge[friendlyKingSquare][preComputedMoveData.pawnAttackDirections[friendlyColorIndex][i]] > 0)
-        {
-            // move in direction friendly pawns attack to get square from which enemy pawn would attack
-            Piece *piece = board->getBoard()[friendlyKingSquare + preComputedMoveData.directionOffsets[preComputedMoveData.pawnAttackDirections[friendlyColorIndex][i]]]->getPiece();
-            if (piece != nullptr && piece->getPieceColor() == opponentColor) // is enemy pawn
-            {
-                return true;
-            }
-        }
-    }
-
     return false;
 }

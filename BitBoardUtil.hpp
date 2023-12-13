@@ -6,6 +6,10 @@ class BitBoardUtil
 {
 
 private:
+    const static uint64_t FileA = 0x101010101010101;
+    const static uint64_t notAFile = ~FileA;
+    const static uint64_t notHFile = ~(FileA << 7);
+
     const static uint64_t deBruijn64 = 0x37E84A99DAE458F;
     inline const static int deBruijnTable[] = {
         0, 1, 17, 2, 18, 50, 3, 57,
@@ -42,6 +46,14 @@ public:
         int i = deBruijnTable[((uint64_t)((int64_t)b & -(int64_t)b) * deBruijn64) >> 58];
         b = b & (b - 1);
         return i;
+    }
+
+    static uint64_t pawnAttacks(uint64_t pawnBitBoard, bool isWhite)
+    {
+        if(isWhite){
+            return ((pawnBitBoard >> 9) & notHFile) | ((pawnBitBoard >> 7) & notAFile); 
+        }
+        return ((pawnBitBoard << 7) & notHFile) | ((pawnBitBoard << 9) & notAFile);
     }
 };
 

@@ -138,7 +138,7 @@ void GameEngine::placePiece(std::string s)
     int startPos = highLightedSquare->getSquarePosition();
     // pawn promotion
 
-    bool validMove = !search ? gameBoard->validateMove(highLightedSquare->getSquarePosition(), squarePosition) : false;
+    bool validMove = !search ? gameBoard->validateMove(startPos, squarePosition) : false;
     if (validMove)
     {
         sf::Sprite &sprite = pieceSprites[pieceType];
@@ -391,22 +391,22 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
 
                 if (pieceChoice == 0)
                 {
-                    piece->promoteType(Piece::QUEEN);
+                    gameBoard->promotePiece(piece,Piece::QUEEN,squareIndx);
                     done = true;
                 }
                 else if (pieceChoice == 8)
                 {
-                    piece->promoteType(Piece::ROOK);
+                    gameBoard->promotePiece(piece,Piece::ROOK,squareIndx);
                     done = true;
                 }
                 else if (pieceChoice == 16)
                 {
-                    piece->promoteType(Piece::BISHOP);
+                    gameBoard->promotePiece(piece,Piece::BISHOP,squareIndx);
                     done = true;
                 }
                 else if (pieceChoice == 24)
                 {
-                    piece->promoteType(Piece::KNIGHT);
+                    gameBoard->promotePiece(piece,Piece::KNIGHT,squareIndx);
                     done = true;
                 }
             }

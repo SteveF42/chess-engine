@@ -35,7 +35,20 @@ void Board::movePiece(Piece *piece, Square *start, Square *target)
 
     BitBoardUtil::flipBits(colorBitboard[colorIndex], start->getSquarePosition(), target->getSquarePosition());
 }
+void Board::promotePiece(Piece *piece, int promoteType, int target)
+{
+    int colorIndex = piece->getPieceColor() == Piece::WHITE ? PieceList::whiteIndex : PieceList::blackIndex;
+    int originalType = piece->getPieceType();
+    // remove pawn from board
+    pieceList.removePiece(piece);
+    piece->promoteType(promoteType);
+    // removes it from the pawn list and adds it to it to its corresponding pieceList
+    pieceList.addPiece(piece);
 
+    // remove pawn from the pawn bitboard and add it to correct bitboard rook, queen, etc...
+    BitBoardUtil::flipBit(bitboards[colorIndex][originalType - 1], target);
+    BitBoardUtil::flipBit(bitboards[colorIndex][piece->getPieceType() - 1], target);
+}
 void Board::makeMove(Move move)
 {
     Square *startSquare = board[move.start];
@@ -130,15 +143,7 @@ void Board::makeMove(Move move)
     // pawn promotion
     if (piece->getPieceType() == Piece::PAWN && move.pawnPromotion)
     {
-        // remove pawn from board
-        pieceList.removePiece(piece);
-        piece->promoteType(move.promotionPieceType);
-        // removes it from the pawn list and adds it to it to its corresponding pieceList
-        pieceList.addPiece(piece);
-
-        // remove pawn from the pawn bitboard and add it to correct bitboard rook, queen, etc...
-        BitBoardUtil::flipBit(bitboards[colorIndex][movedPieceType - 1], move.target);
-        BitBoardUtil::flipBit(bitboards[colorIndex][piece->getPieceType() - 1], move.target);
+        promotePiece(piece,move.promotionPieceType,move.target);
     }
     // castle move
     if (move.isCastle)
@@ -286,13 +291,7 @@ Move Board::unmakeMove()
     // pawn promotion
     if (move.pawnPromotion)
     {
-        pieceList.removePiece(movedPiece);
-        movedPiece->promoteType(Piece::PAWN);
-        pieceList.addPiece(movedPiece);
-
-        // piece already moved to correct position on colorboard, remove piece from promoted type and put it back into pawn bitboard
-        BitBoardUtil::flipBit(bitboards[friendlyIndex][movedPieceType - 1], move.start);
-        BitBoardUtil::flipBit(bitboards[friendlyIndex][movedPiece->getPieceType() - 1], move.start);
+        promotePiece(movedPiece,Piece::PAWN,move.start);
     }
     // castle move
     if (move.isCastle)

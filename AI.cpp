@@ -52,7 +52,7 @@ void AI::generateBestMove()
     numExtensions = 0;
     if (playBookMove)
     {
-        //add something to find opening moves for current side
+        // add something to find opening moves for current side
     }
     else
     {
@@ -91,11 +91,11 @@ long AI::moveGenerationTest(int depth)
 
     auto moves = position->moveGeneration.generateMoves(position);
     long numPositions = 0;
-
     for (auto &move : moves)
     {
         position->makeMove(move);
-        numPositions += moveGenerationTest(depth - 1);
+        int pos = moveGenerationTest(depth - 1);
+        numPositions += pos;
         bestMove = move;
         position->unmakeMove();
     }

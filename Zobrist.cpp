@@ -117,7 +117,7 @@ uint64_t Zobrist::generateZobristKey(Board *board)
     if (!board->whiteToMove)
         zobristKey ^= sideToMove;
 
-    std::cout << "Generated key " << zobristKey << '\n';
+    // std::cout << "Generated key " << zobristKey << '\n';
     return zobristKey;
 }
 

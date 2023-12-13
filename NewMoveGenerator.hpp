@@ -83,29 +83,11 @@ private:
 	void genSlidingAttackMap();
 	void updateSlidingAttackPiece(int startSquare, int startDirIndex, int endDirIndex);
 	bool containsSquare(uint64_t bitboard, int square);
-	void generateSlidingMoves();
 	void generateSlidingPieceMoves();
 	void generateKnightMoves();
 	bool isPinned(int square);
 	bool inCheckAfterEnPassant(int startSquare, int targetSquare, int epCapturedPawnSquare);
-	bool squareAttackedAfterEPCapture(int epCaptureSquare, int capturingPawnStartSquare);
 	void generatePawnMoves();
-	bool isMovingAlongRay(int rayDir, int startSquare, int targetSquare);
-
-	// void MakePromotionMoves(int fromSquare, int toSquare)
-	// {
-	// 	moves.Add(new Move(fromSquare, toSquare, Move.Flag.PromoteToQueen));
-	// 	if (promotionsToGenerate == PromotionMode.All)
-	// 	{
-	// 		moves.Add(new Move(fromSquare, toSquare, Move.Flag.PromoteToKnight));
-	// 		moves.Add(new Move(fromSquare, toSquare, Move.Flag.PromoteToRook));
-	// 		moves.Add(new Move(fromSquare, toSquare, Move.Flag.PromoteToBishop));
-	// 	}
-	// 	else if (promotionsToGenerate == PromotionMode.QueenAndKnight)
-	// 	{
-	// 		moves.Add(new Move(fromSquare, toSquare, Move.Flag.PromoteToKnight));
-	// 	}
-	// }
 };
 
 #endif
