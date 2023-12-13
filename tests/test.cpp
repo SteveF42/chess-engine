@@ -19,13 +19,22 @@ TEST_CASE("Zobrist key generation", "[Zobrist]")
     delete board;
 }
 
+// TEST_CASE("AI Depth Benchmark", "[Benchmark]")
+// {
+//     Board *board = ReadFen::readFenString(ReadFen::startingString);
+//     AI ai(board);
+//     BENCHMARK("DEPTH 6")
+//     {
+//         return ai.moveGenerationTest(6);
+//     };
+// } 
+
 TEST_CASE("AI move depth", "[AI]")
 {
     SECTION("Starting board position")
     {
         Board *board = ReadFen::readFenString(ReadFen::startingString);
         AI ai(board);
-
         REQUIRE(ai.moveGenerationTest(1) == 20);
         REQUIRE(ai.moveGenerationTest(2) == 400);
         REQUIRE(ai.moveGenerationTest(3) == 8902);
