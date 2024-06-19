@@ -92,12 +92,16 @@ void GameEngine::events()
             // switch board view
             flippedView = std::abs(63 - flippedView);
         }
+        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && event.type == sf::Event::KeyPressed)
+        {
+            pauseMoves = false;
+        }
     }
 }
 
 void GameEngine::aiMove()
 {
-    if (gameBoard->getWhiteToMove() != this->playAsWhite && !pauseMoves)
+    if (!pauseMoves)
     {
         if (moveSearch == nullptr && !search)
         {
@@ -121,6 +125,7 @@ void GameEngine::aiMove()
             delete this->moveSearch;
             this->moveSearch = nullptr;
             search = false;
+            pauseMoves = true;
         }
     }
 }
@@ -305,11 +310,13 @@ void GameEngine::drawBoard()
             {
                 rectangle.setFillColor(DARKSQUARE);
             }
-            if(file == 0){
-                //draw letters
+            if (file == 0)
+            {
+                // draw letters
             }
-            if (rank == 0){
-                //draw numbers
+            if (rank == 0)
+            {
+                // draw numbers
             }
             window->draw(rectangle);
         }
@@ -391,22 +398,22 @@ void GameEngine::drawPromotionPieces(int squareIndx, int color)
 
                 if (pieceChoice == 0)
                 {
-                    gameBoard->promotePiece(piece,Piece::QUEEN,squareIndx);
+                    gameBoard->promotePiece(piece, Piece::QUEEN, squareIndx);
                     done = true;
                 }
                 else if (pieceChoice == 8)
                 {
-                    gameBoard->promotePiece(piece,Piece::ROOK,squareIndx);
+                    gameBoard->promotePiece(piece, Piece::ROOK, squareIndx);
                     done = true;
                 }
                 else if (pieceChoice == 16)
                 {
-                    gameBoard->promotePiece(piece,Piece::BISHOP,squareIndx);
+                    gameBoard->promotePiece(piece, Piece::BISHOP, squareIndx);
                     done = true;
                 }
                 else if (pieceChoice == 24)
                 {
-                    gameBoard->promotePiece(piece,Piece::KNIGHT,squareIndx);
+                    gameBoard->promotePiece(piece, Piece::KNIGHT, squareIndx);
                     done = true;
                 }
             }

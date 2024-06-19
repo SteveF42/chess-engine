@@ -20,7 +20,7 @@ private:
     const unsigned int TARGETSIZE = 1000;
     sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(TARGETSIZE, TARGETSIZE), "chess engine!");
     Board *gameBoard;
-    bool pauseMoves = false;
+    bool pauseMoves = true;
     bool playAsWhite;
     int flippedView;
     bool search = false;
