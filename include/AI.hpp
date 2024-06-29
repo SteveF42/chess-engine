@@ -20,7 +20,7 @@ private:
     int pawnBonuses[7] = {0, 120, 80, 50, 30, 15, 15};
     int isolatedPawnCountPenalty[9] = {0, -10, -25, -50, -75, -75, -75, -75, -75};
 
-    const static int TIMEOUT_MILISECONDS = 3201; // 3 seconds
+    const static int TIMEOUT_MILISECONDS = 3201000; // 3 seconds
     Board *position;
     bool timeout = true;
     bool playBookMove = false;

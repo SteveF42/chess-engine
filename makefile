@@ -1,10 +1,10 @@
 all: compile link run
 
 compile: 
-	g++ -c *.cpp -I"C:\msys64\mingw64\SFML-2.5.1-windows-gcc-7.3.0-mingw-64-bit\SFML-2.5.1\include" -DSFML_STATIC -g -O2
+	g++ -std=c++17 -c main.cpp ./src/*.cpp -I"/opt/homebrew/Cellar/sfml/2.6.1/include" -I"./include" -DSFML_STATIC -g -O2
 
 link:
-	g++ *.o -o main -L"C:\msys64\mingw64\SFML-2.5.1-windows-gcc-7.3.0-mingw-64-bit\SFML-2.5.1\lib" -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lsfml-main
+	g++ *.o -o main -L"/opt/homebrew/Cellar/sfml/2.6.1/lib" -lsfml-window -lsfml-system -lsfml-graphics
 
 clean:
 	rm -f main *.o
